@@ -1,0 +1,5 @@
+✓ CRDLEDGER database initialized
+✓ Database: ./crdledger.db
+✓ Server starting on http://localhost:8080
+✓ Visit http://localhost:8080/register to create an account
+✓ Visit http://localhost:8080/login to login
