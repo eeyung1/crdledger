@@ -2,12 +2,24 @@ package main
 
 import (
 	"database/sql"
+	"html/template"
 	"log"
+	"net/http"
+	"os"
+
+	"crdledger/internal/handler"
+	"crdledger/internal/middleware"
+	"crdledger/internal/repository"
+	"crdledger/internal/service"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
+	if _, ok := os.LookupEnv("SESSION_SECRET"); !ok {
+		log.Fatal("SESSION_SECRET environment variable is required but not set")
+	}
+
 	db, err := sql.Open("sqlite3", "./crdledger.db")
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
@@ -23,6 +35,49 @@ func main() {
 	}
 
 	log.Println("database ready: crdledger.db")
+
+	templates, err := template.ParseGlob("templates/*.html")
+	if err != nil {
+		log.Fatalf("failed to parse templates: %v", err)
+	}
+
+	userRepo := repository.NewUserRepository(db)
+	transactionRepo := repository.NewTransactionRepository(db)
+
+	authService := service.NewAuthService(userRepo)
+	transactionService := service.NewTransactionService(transactionRepo, userRepo)
+	balanceService := service.NewBalanceService(transactionRepo, userRepo)
+
+	sessions := middleware.NewSessionStore()
+
+	authHandler := handler.NewAuthHandler(authService, sessions, templates)
+	dashboardHandler := handler.NewDashboardHandler(userRepo, balanceService, templates)
+	transactionHandler := handler.NewTransactionHandler(transactionService, templates)
+
+	mux := http.NewServeMux()
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		if _, ok := sessions.CurrentUserID(r); ok {
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+	})
+	mux.HandleFunc("/register", authHandler.RegisterPage)
+	mux.HandleFunc("/login", authHandler.LoginPage)
+	mux.HandleFunc("/logout", authHandler.Logout)
+	mux.HandleFunc("/dashboard", sessions.RequireAuth(dashboardHandler.Dashboard))
+	mux.HandleFunc("/transactions/new", sessions.RequireAuth(transactionHandler.RecordPage))
+	mux.HandleFunc("/transactions/mark-paid", sessions.RequireAuth(transactionHandler.MarkPaid))
+
+	log.Println("listening on :8080")
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatalf("server failed: %v", err)
+	}
 }
 
 func createTables(db *sql.DB) error {

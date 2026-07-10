@@ -50,3 +50,20 @@ func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
 	}
 	return &u, nil
 }
+
+func (r *UserRepository) GetByID(id int64) (*models.User, error) {
+	var u models.User
+	row := r.db.QueryRow(
+		`SELECT id, username, password_hash, display_name, created_at FROM users WHERE id = ?`,
+		id,
+	)
+
+	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.DisplayName, &u.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return &u, nil
+}

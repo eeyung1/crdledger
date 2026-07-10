@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="/static/css/style.css">
+	<title>Register — crdledger</title>
+</head>
+<body>
+	<h1>Register</h1>
+
+	{{if .Error}}
+	<p class="error">{{.Error}}</p>
+	{{end}}
+
+	<form method="POST" action="/register">
+		<label>
+			Username
+			<input type="text" name="username" required>
+		</label>
+		<br>
+		<label>
+			Password
+			<input type="password" name="password" required>
+		</label>
+		<br>
+		<label>
+			Display name
+			<input type="text" name="display_name" required>
+		</label>
+		<br>
+		<button type="submit">Register</button>
+	</form>
+
+	<p><a href="/login">Already have an account? Log in</a></p>
+</body>
+</html>
