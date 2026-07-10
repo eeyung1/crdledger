@@ -6,25 +6,27 @@
 	<link rel="stylesheet" href="/static/css/style.css">
 	<title>Edit profile — crdledger</title>
 </head>
-<body>
+<body class="dark">
+{{template "sidebar" .}}
 	<h1>Edit profile</h1>
 
 	{{if .PhotoPath}}
-	<img src="{{.PhotoPath}}" alt="Profile photo" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover;">
+	<img src="{{.PhotoPath}}" alt="Profile photo" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin-bottom: 16px;">
+	{{else}}
+	{{template "logo"}}
 	{{end}}
 
 	{{if .PhotoError}}
 	<p class="error">{{.PhotoError}}</p>
 	{{end}}
 
-	<form method="POST" action="/photo/upload" enctype="multipart/form-data">
+	<form method="POST" action="/photo/upload" enctype="multipart/form-data" style="max-width: 340px;">
 		<label>
 			{{if .PhotoPath}}Change{{else}}Add{{end}} profile photo
 			<input type="file" name="photo" accept="image/jpeg,image/png,image/gif" required>
 		</label>
-		<button type="submit">Upload</button>
+		<button type="submit" class="btn-primary">Upload</button>
 	</form>
-
-	<p><a href="/dashboard">Back to dashboard</a></p>
+{{template "sidebar_end" .}}
 </body>
 </html>

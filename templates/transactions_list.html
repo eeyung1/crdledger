@@ -6,39 +6,39 @@
 	<link rel="stylesheet" href="/static/css/style.css">
 	<title>{{.Title}} — crdledger</title>
 </head>
-<body>
+<body class="dark">
 {{template "sidebar" .}}
 	<h1>{{.Title}}</h1>
 
 	<form method="GET" action="{{.BasePath}}">
 		<input type="text" name="q" placeholder="Search by name or username" value="{{.Query}}">
-		<button type="submit">Search</button>
+		<button type="submit" class="btn-primary">Search</button>
 		{{if .Query}}<a href="{{.BasePath}}">Clear</a>{{end}}
 	</form>
 
 	{{if .Transactions}}
-	<table border="1" cellpadding="6">
-		<tr>
-			<th>With</th>
-			<th>Amount</th>
-			<th>Description</th>
-			<th>Status</th>
-			<th>Paid on</th>
-			<th></th>
+	<table style="background: var(--navy-card); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden;">
+		<tr style="border-color: var(--border-color);">
+			<th style="border-color: var(--border-color); color: var(--text-secondary);">With</th>
+			<th style="border-color: var(--border-color); color: var(--text-secondary);">Amount</th>
+			<th style="border-color: var(--border-color); color: var(--text-secondary);">Description</th>
+			<th style="border-color: var(--border-color); color: var(--text-secondary);">Status</th>
+			<th style="border-color: var(--border-color); color: var(--text-secondary);">Paid on</th>
+			<th style="border-color: var(--border-color);"></th>
 		</tr>
 		{{range .Transactions}}
-		<tr>
-			<td>{{.CounterpartName}}</td>
-			<td>{{.Amount}}</td>
-			<td>{{.Description}}</td>
-			<td>{{.Status}}</td>
-			<td>{{if .PaidAt}}{{.PaidAt.Format "2006-01-02"}}{{end}}</td>
-			<td>
+		<tr style="border-color: var(--border-color);">
+			<td style="border-color: var(--border-color);">{{.CounterpartName}}</td>
+			<td style="border-color: var(--border-color);">{{.Amount}}</td>
+			<td style="border-color: var(--border-color);">{{.Description}}</td>
+			<td style="border-color: var(--border-color);">{{.Status}}</td>
+			<td style="border-color: var(--border-color);">{{if .PaidAt}}{{.PaidAt.Format "2006-01-02"}}{{end}}</td>
+			<td style="border-color: var(--border-color);">
 				{{if and .IsSeller (eq .Status "pending")}}
-				<form method="POST" action="/transactions/mark-paid">
+				<form method="POST" action="/transactions/mark-paid" style="margin: 0;">
 					<input type="hidden" name="transaction_id" value="{{.ID}}">
-					<input type="date" name="paid_date" required>
-					<button type="submit">Mark as paid</button>
+					<input type="date" name="paid_date" required style="width: auto;">
+					<button type="submit" class="btn-primary" style="width: auto; padding: 8px 12px; font-size: 14px;">Mark as paid</button>
 				</form>
 				{{end}}
 			</td>

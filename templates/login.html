@@ -6,27 +6,29 @@
 	<link rel="stylesheet" href="/static/css/style.css">
 	<title>Log in — crdledger</title>
 </head>
-<body>
-	<h1>Log in</h1>
+<body class="dark auth-page">
+	<div class="auth-header">
+		{{template "logo"}}
+		<h1>crdledger</h1>
+		<p>Never forget who owes who</p>
+	</div>
 
 	{{if .Error}}
 	<p class="error">{{.Error}}</p>
 	{{end}}
 
-	<form method="POST" action="/login">
+	<form class="auth-form" method="POST" action="/login">
 		<label>
 			Username
-			<input type="text" name="username" required>
+			<input type="text" name="username" placeholder="Enter your username" required>
 		</label>
-		<br>
 		<label>
 			Password
-			<input type="password" name="password" required>
+			<input type="password" name="password" placeholder="Enter your password" required>
 		</label>
-		<br>
-		<button type="submit">Log in</button>
+		<button type="submit" class="btn-primary">Login</button>
 	</form>
 
-	<p><a href="/register">Need an account? Register</a></p>
+	<p class="auth-footer">Don't have an account? <a href="/register">Register</a></p>
 </body>
 </html>

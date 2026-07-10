@@ -6,32 +6,33 @@
 	<link rel="stylesheet" href="/static/css/style.css">
 	<title>Register — crdledger</title>
 </head>
-<body>
-	<h1>Register</h1>
+<body class="dark auth-page">
+	<div class="auth-header">
+		{{template "logo"}}
+		<h1>crdledger</h1>
+		<p>Never forget who owes who</p>
+	</div>
 
 	{{if .Error}}
 	<p class="error">{{.Error}}</p>
 	{{end}}
 
-	<form method="POST" action="/register">
+	<form class="auth-form" method="POST" action="/register">
 		<label>
 			Username
-			<input type="text" name="username" required>
+			<input type="text" name="username" placeholder="Choose a username" required>
 		</label>
-		<br>
 		<label>
 			Password
-			<input type="password" name="password" required>
+			<input type="password" name="password" placeholder="Choose a password" required>
 		</label>
-		<br>
 		<label>
 			Display name
-			<input type="text" name="display_name" required>
+			<input type="text" name="display_name" placeholder="Enter your display name" required>
 		</label>
-		<br>
-		<button type="submit">Register</button>
+		<button type="submit" class="btn-primary">Register</button>
 	</form>
 
-	<p><a href="/login">Already have an account? Log in</a></p>
+	<p class="auth-footer">Already have an account? <a href="/login">Log in</a></p>
 </body>
 </html>

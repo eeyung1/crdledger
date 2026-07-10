@@ -1,3 +1,13 @@
+:root {
+	--navy-bg: #0f1729;
+	--navy-card: #1a2338;
+	--emerald: #10b981;
+	--emerald-dark: #059669;
+	--text-primary: #ffffff;
+	--text-secondary: #94a3b8;
+	--border-color: #2d3a52;
+}
+
 * {
 	box-sizing: border-box;
 }
@@ -10,6 +20,13 @@ body {
 	line-height: 1.5;
 	color: #1a1a1a;
 	background: #fafafa;
+}
+
+body.dark {
+	background: var(--navy-bg);
+	color: var(--text-primary);
+	min-height: 100vh;
+	margin: 0;
 }
 
 h1 {
@@ -36,32 +53,56 @@ label {
 	font-size: 16px;
 }
 
+.dark label {
+	color: var(--text-secondary);
+	font-size: 14px;
+}
+
 input {
 	font-size: 18px;
 	padding: 12px;
 	border: 1px solid #ccc;
-	border-radius: 6px;
+	border-radius: 10px;
 	width: 100%;
+}
+
+.dark input {
+	border: none;
+	background: #ffffff;
+	color: #1a1a1a;
 }
 
 button {
 	font-size: 18px;
-	padding: 12px;
+	padding: 14px;
 	border: none;
-	border-radius: 6px;
+	border-radius: 10px;
 	background: #2563eb;
 	color: white;
 	cursor: pointer;
 	width: 100%;
+	font-weight: 600;
 }
 
 button:active {
 	background: #1d4ed8;
 }
 
+.btn-primary {
+	background: var(--emerald);
+}
+
+.btn-primary:active {
+	background: var(--emerald-dark);
+}
+
 a {
 	color: #2563eb;
 	text-decoration: none;
+}
+
+.dark a {
+	color: var(--emerald);
 }
 
 table {
@@ -112,9 +153,65 @@ th, td {
 	font-weight: 600;
 }
 
+/* Auth pages (login/register) - dark fintech style */
+.auth-page {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	background: var(--navy-bg);
+	padding: 24px 20px;
+}
+
+.auth-header {
+	text-align: center;
+	margin-bottom: 32px;
+}
+
+.auth-header h1 {
+	color: white;
+	font-size: 28px;
+	margin: 12px 0 4px;
+}
+
+.auth-header p {
+	color: var(--text-secondary);
+	margin: 0;
+	font-size: 15px;
+}
+
+.auth-form {
+	width: 100%;
+	max-width: 340px;
+}
+
+.auth-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--text-secondary);
+	font-size: 14px;
+	flex-direction: row;
+}
+
+.auth-checkbox input {
+	width: auto;
+}
+
+.auth-footer {
+	text-align: center;
+	color: var(--text-secondary);
+	font-size: 15px;
+	margin-top: 8px;
+}
+
 @media (min-width: 600px) {
 	body {
 		max-width: 480px;
 		margin: 0 auto;
+	}
+	.auth-page {
+		max-width: none;
 	}
 }

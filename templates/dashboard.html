@@ -6,30 +6,32 @@
 	<link rel="stylesheet" href="/static/css/style.css">
 	<title>Dashboard — crdledger</title>
 </head>
-<body>
+<body class="dark">
 {{template "sidebar" .}}
-	<div style="display: flex; align-items: center; gap: 12px;">
-	{{if .PhotoPath}}
-	<img src="{{.PhotoPath}}" alt="Profile photo" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;">
-	{{end}}
-	<h1>Welcome, {{.DisplayName}}</h1>
-</div>
+	<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+		{{if .PhotoPath}}
+		<img src="{{.PhotoPath}}" alt="Profile photo" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;">
+		{{else}}
+		{{template "logo"}}
+		{{end}}
+		<h1 style="margin: 0;">Welcome, {{.DisplayName}}</h1>
+	</div>
 
+	{{if .PhotoError}}
+	<p class="error">{{.PhotoError}}</p>
+	{{end}}
 
 	<div class="balance-summary">
-		<div class="balance-card">
-			<div class="label">Total receivable</div>
-			<div class="value">{{.TotalReceivable}}</div>
+		<div class="balance-card" style="background: var(--navy-card); border-color: var(--border-color);">
+			<div class="label" style="color: var(--text-secondary);">Total receivable</div>
+			<div class="value" style="color: var(--emerald);">{{.TotalReceivable}}</div>
 		</div>
-		<div class="balance-card">
-			<div class="label">Total owed</div>
-			<div class="value">{{.TotalOwed}}</div>
+		<div class="balance-card" style="background: var(--navy-card); border-color: var(--border-color);">
+			<div class="label" style="color: var(--text-secondary);">Total owed</div>
+			<div class="value" style="color: white;">{{.TotalOwed}}</div>
 		</div>
 	</div>
 
-	<form method="POST" action="/logout">
-		<button type="submit">Log out</button>
-	</form>
 {{template "sidebar_end" .}}
 </body>
 </html>

@@ -6,20 +6,20 @@
 	<link rel="stylesheet" href="/static/css/style.css">
 	<title>Transactions — crdledger</title>
 </head>
-<body>
+<body class="dark">
 {{template "sidebar" .}}
 	<h1>Transactions</h1>
 	<div class="balance-summary">
-		<a href="/transactions/creditors" style="text-decoration: none;">
-			<div class="balance-card">
-				<div class="label">Creditors (you're owed money)</div>
-				<div class="value">View</div>
+		<a href="/transactions/creditors" style="text-decoration: none; flex: 1;">
+			<div class="balance-card" style="background: var(--navy-card); border-color: var(--border-color);">
+				<div class="label" style="color: var(--text-secondary);">Creditors (you're owed money)</div>
+				<div class="value" style="color: var(--emerald);">View</div>
 			</div>
 		</a>
-		<a href="/transactions/debtors" style="text-decoration: none;">
-			<div class="balance-card">
-				<div class="label">Debtors (you owe money)</div>
-				<div class="value">View</div>
+		<a href="/transactions/debtors" style="text-decoration: none; flex: 1;">
+			<div class="balance-card" style="background: var(--navy-card); border-color: var(--border-color);">
+				<div class="label" style="color: var(--text-secondary);">Debtors (you owe money)</div>
+				<div class="value" style="color: white;">View</div>
 			</div>
 		</a>
 	</div>
