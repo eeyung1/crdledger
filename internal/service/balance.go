@@ -110,3 +110,13 @@ func FilterTransactions(views []TransactionView, query string) []TransactionView
 	}
 	return filtered
 }
+
+func FilterByRole(views []TransactionView, isSeller bool) []TransactionView {
+	var filtered []TransactionView
+	for _, v := range views {
+		if v.IsSeller == isSeller {
+			filtered = append(filtered, v)
+		}
+	}
+	return filtered
+}

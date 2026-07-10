@@ -7,5 +7,6 @@ type User struct {
 	Username     string
 	PasswordHash string
 	DisplayName  string
+	PhotoPath    string
 	CreatedAt    time.Time
 }

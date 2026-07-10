@@ -71,8 +71,18 @@ func main() {
 	mux.HandleFunc("/login", authHandler.LoginPage)
 	mux.HandleFunc("/logout", authHandler.Logout)
 	mux.HandleFunc("/dashboard", sessions.RequireAuth(dashboardHandler.Dashboard))
+	transactionsMenuHandler := handler.NewTransactionsMenuHandler(templates)
+	mux.HandleFunc("/transactions", sessions.RequireAuth(transactionsMenuHandler.Menu))
+	transactionsListHandler := handler.NewTransactionsListHandler(balanceService, templates)
+	mux.HandleFunc("/transactions/creditors", sessions.RequireAuth(transactionsListHandler.Creditors))
+	mux.HandleFunc("/transactions/debtors", sessions.RequireAuth(transactionsListHandler.Debtors))
 	mux.HandleFunc("/transactions/new", sessions.RequireAuth(transactionHandler.RecordPage))
 	mux.HandleFunc("/transactions/mark-paid", sessions.RequireAuth(transactionHandler.MarkPaid))
+	photoService := service.NewPhotoService(userRepo)
+	photoHandler := handler.NewPhotoHandler(photoService, templates)
+	profileHandler := handler.NewProfileHandler(userRepo, templates)
+	mux.HandleFunc("/profile/edit", sessions.RequireAuth(profileHandler.EditProfilePage))
+	mux.HandleFunc("/photo/upload", sessions.RequireAuth(photoHandler.Upload))
 
 	log.Println("listening on :8080")
 	if err := http.ListenAndServe(":8080", mux); err != nil {
@@ -87,6 +97,7 @@ func createTables(db *sql.DB) error {
 		username TEXT NOT NULL UNIQUE,
 		password_hash TEXT NOT NULL,
 		display_name TEXT NOT NULL,
+		photo_path TEXT,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	);`
 

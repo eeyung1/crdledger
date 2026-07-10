@@ -38,14 +38,11 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query().Get("q")
-	transactions := service.FilterTransactions(balance.Transactions, query)
-
 	h.templates.ExecuteTemplate(w, "dashboard.html", map[string]any{
 		"DisplayName":     user.DisplayName,
+		"PhotoPath":       user.PhotoPath,
+		"PhotoError":      r.URL.Query().Get("photo_error"),
 		"TotalReceivable": balance.TotalReceivable,
 		"TotalOwed":       balance.TotalOwed,
-		"Transactions":    transactions,
-		"Query":           query,
 	})
 }

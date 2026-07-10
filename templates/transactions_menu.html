@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="/static/css/style.css">
+	<title>Transactions — crdledger</title>
+</head>
+<body>
+{{template "sidebar" .}}
+	<h1>Transactions</h1>
+	<div class="balance-summary">
+		<a href="/transactions/creditors" style="text-decoration: none;">
+			<div class="balance-card">
+				<div class="label">Creditors (you're owed money)</div>
+				<div class="value">View</div>
+			</div>
+		</a>
+		<a href="/transactions/debtors" style="text-decoration: none;">
+			<div class="balance-card">
+				<div class="label">Debtors (you owe money)</div>
+				<div class="value">View</div>
+			</div>
+		</a>
+	</div>
+{{template "sidebar_end" .}}
+</body>
+</html>

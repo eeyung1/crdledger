@@ -1,0 +1,14 @@
+{{define "sidebar"}}
+<div style="display: flex; gap: 16px;">
+	<nav style="width: 140px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
+		<a href="/dashboard">Dashboard</a>
+		<a href="/profile/edit">Edit profile</a>
+		<a href="/transactions/new">Record a transaction</a>
+		<a href="/transactions">Transactions</a>
+	</nav>
+	<div style="flex: 1; min-width: 0;">
+{{end}}
+{{define "sidebar_end"}}
+	</div>
+</div>
+{{end}}

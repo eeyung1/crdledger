@@ -7,7 +7,14 @@
 	<title>Dashboard — crdledger</title>
 </head>
 <body>
+{{template "sidebar" .}}
+	<div style="display: flex; align-items: center; gap: 12px;">
+	{{if .PhotoPath}}
+	<img src="{{.PhotoPath}}" alt="Profile photo" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;">
+	{{end}}
 	<h1>Welcome, {{.DisplayName}}</h1>
+</div>
+
 
 	<div class="balance-summary">
 		<div class="balance-card">
@@ -20,53 +27,9 @@
 		</div>
 	</div>
 
-	<p><a href="/transactions/new">Record a transaction</a></p>
-
-	<h2>Transactions</h2>
-
-	<form method="GET" action="/dashboard">
-		<input type="text" name="q" placeholder="Search by name or username" value="{{.Query}}">
-		<button type="submit">Search</button>
-		{{if .Query}}<a href="/dashboard">Clear</a>{{end}}
-	</form>
-
-	{{if .Transactions}}
-	<table border="1" cellpadding="6">
-		<tr>
-			<th>With</th>
-			<th></th>
-			<th>Amount</th>
-			<th>Description</th>
-			<th>Status</th>
-			<th>Paid on</th>
-			<th></th>
-		</tr>
-		{{range .Transactions}}
-		<tr>
-			<td>{{.CounterpartName}}</td>
-			<td>{{.Role}}</td>
-			<td>{{.Amount}}</td>
-			<td>{{.Description}}</td>
-			<td>{{.Status}}</td>
-			<td>{{if .PaidAt}}{{.PaidAt.Format "2006-01-02"}}{{end}}</td>
-			<td>
-				{{if and .IsSeller (eq .Status "pending")}}
-				<form method="POST" action="/transactions/mark-paid">
-					<input type="hidden" name="transaction_id" value="{{.ID}}">
-					<input type="date" name="paid_date" required>
-					<button type="submit">Mark as paid</button>
-				</form>
-				{{end}}
-			</td>
-		</tr>
-		{{end}}
-	</table>
-	{{else}}
-	<p>No transactions match your search.</p>
-	{{end}}
-
 	<form method="POST" action="/logout">
 		<button type="submit">Log out</button>
 	</form>
+{{template "sidebar_end" .}}
 </body>
 </html>
