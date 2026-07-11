@@ -2,36 +2,39 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="stylesheet" href="/static/css/style.css">
+	{{template "pwa_head" .}}
 	<title>Dashboard — crdledger</title>
 </head>
 <body class="dark">
 {{template "sidebar" .}}
-	<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-		{{if .PhotoPath}}
-		<img src="{{.PhotoPath}}" alt="Profile photo" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;">
-		{{else}}
-		{{template "logo"}}
-		{{end}}
-		<h1 style="margin: 0;">Welcome, {{.DisplayName}}</h1>
+	<div class="page-head">
+		<div class="avatar xl">
+			{{if .PhotoPath}}<img src="{{.PhotoPath}}" alt="">{{else}}{{template "logo"}}{{end}}
+		</div>
+		<div>
+			<p class="eyebrow">Welcome back</p>
+			<h1>{{.DisplayName}}</h1>
+		</div>
 	</div>
 
 	{{if .PhotoError}}
-	<p class="error">{{.PhotoError}}</p>
+	<p class="error" role="alert">{{.PhotoError}}</p>
 	{{end}}
 
 	<div class="balance-summary">
-		<div class="balance-card" style="background: var(--navy-card); border-color: var(--border-color);">
-			<div class="label" style="color: var(--text-secondary);">Total receivable</div>
-			<div class="value" style="color: var(--emerald);">{{.TotalReceivable}}</div>
-		</div>
-		<div class="balance-card" style="background: var(--navy-card); border-color: var(--border-color);">
-			<div class="label" style="color: var(--text-secondary);">Total owed</div>
-			<div class="value" style="color: white;">{{.TotalOwed}}</div>
-		</div>
+		<a class="balance-card link-card glass receivable" href="/transactions/creditors">
+			<div class="label">{{template "icon_receivable"}} Total receivable</div>
+			<div class="value">{{.TotalReceivable}}</div>
+		</a>
+		<a class="balance-card link-card glass owed" href="/transactions/debtors">
+			<div class="label">{{template "icon_owed"}} Total owed</div>
+			<div class="value">{{.TotalOwed}}</div>
+		</a>
 	</div>
 
+	<a href="/transactions/new" class="btn btn-primary only-desktop" style="max-width: 260px;">{{template "icon_record"}} Record a transaction</a>
 {{template "sidebar_end" .}}
 </body>
 </html>
