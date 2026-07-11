@@ -10,7 +10,9 @@ import (
 
 func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		h.templates.ExecuteTemplate(w, "login.html", nil)
+		h.templates.ExecuteTemplate(w, "login.html", map[string]any{
+			"CSRFToken": middleware.CSRFTokenFromContext(r),
+		})
 		return
 	}
 
@@ -30,7 +32,10 @@ func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 		} else {
 			errMsg = "Something went wrong. Please try again."
 		}
-		h.templates.ExecuteTemplate(w, "login.html", map[string]string{"Error": errMsg})
+		h.templates.ExecuteTemplate(w, "login.html", map[string]any{
+			"Error":     errMsg,
+			"CSRFToken": middleware.CSRFTokenFromContext(r),
+		})
 		return
 	}
 
@@ -40,29 +45,21 @@ func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     middleware.SessionCookieName,
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-	})
-
+	h.sessions.SetCookie(w, token)
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	cookie, err := r.Cookie(middleware.SessionCookieName)
 	if err == nil {
 		h.sessions.Destroy(cookie.Value)
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     middleware.SessionCookieName,
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
-		HttpOnly: true,
-	})
-
+	h.sessions.ClearCookie(w)
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
