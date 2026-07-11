@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="stylesheet" href="/static/css/style.css">
+	{{template "pwa_head" .}}
 	<title>Register — crdledger</title>
 </head>
 <body class="dark auth-page">
@@ -14,23 +15,24 @@
 	</div>
 
 	{{if .Error}}
-	<p class="error">{{.Error}}</p>
+	<p class="error" role="alert">{{.Error}}</p>
 	{{end}}
 
-	<form class="auth-form" method="POST" action="/register">
+	<form class="auth-form glass card" method="POST" action="/register">
+		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 		<label>
 			Username
-			<input type="text" name="username" placeholder="Choose a username" required>
+			<input type="text" name="username" placeholder="Choose a username" autocomplete="username" required autofocus>
 		</label>
 		<label>
 			Password
-			<input type="password" name="password" placeholder="Choose a password" required>
+			<input type="password" name="password" placeholder="Choose a password" autocomplete="new-password" required>
 		</label>
 		<label>
 			Display name
-			<input type="text" name="display_name" placeholder="Enter your display name" required>
+			<input type="text" name="display_name" placeholder="What should people call you?" autocomplete="name" required>
 		</label>
-		<button type="submit" class="btn-primary">Register</button>
+		<button type="submit" class="btn-primary">Create account</button>
 	</form>
 
 	<p class="auth-footer">Already have an account? <a href="/login">Log in</a></p>
