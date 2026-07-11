@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="stylesheet" href="/static/css/style.css">
+	{{template "pwa_head" .}}
 	<title>Log in — crdledger</title>
 </head>
 <body class="dark auth-page">
@@ -14,19 +15,20 @@
 	</div>
 
 	{{if .Error}}
-	<p class="error">{{.Error}}</p>
+	<p class="error" role="alert">{{.Error}}</p>
 	{{end}}
 
-	<form class="auth-form" method="POST" action="/login">
+	<form class="auth-form glass card" method="POST" action="/login">
+		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 		<label>
 			Username
-			<input type="text" name="username" placeholder="Enter your username" required>
+			<input type="text" name="username" placeholder="Enter your username" autocomplete="username" required autofocus>
 		</label>
 		<label>
 			Password
-			<input type="password" name="password" placeholder="Enter your password" required>
+			<input type="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
 		</label>
-		<button type="submit" class="btn-primary">Login</button>
+		<button type="submit" class="btn-primary">Log in</button>
 	</form>
 
 	<p class="auth-footer">Don't have an account? <a href="/register">Register</a></p>
