@@ -1,17 +1,45 @@
 {{define "sidebar"}}
-<div style="display: flex; gap: 20px; min-height: 100vh;">
-	<nav style="width: 160px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding-top: 4px;">
-		<a href="/dashboard" style="display: block; padding: 12px 14px; border-radius: 10px; background: var(--navy-card); border: 1px solid var(--border-color); color: var(--text-primary); text-align: center; font-weight: 600;">Dashboard</a>
-		<a href="/profile/edit" style="display: block; padding: 12px 14px; border-radius: 10px; background: var(--navy-card); border: 1px solid var(--border-color); color: var(--text-primary); text-align: center; font-weight: 600;">Edit profile</a>
-		<a href="/transactions/new" style="display: block; padding: 12px 14px; border-radius: 10px; background: var(--navy-card); border: 1px solid var(--border-color); color: var(--text-primary); text-align: center; font-weight: 600;">Record a transaction</a>
-		<a href="/transactions" style="display: block; padding: 12px 14px; border-radius: 10px; background: var(--navy-card); border: 1px solid var(--border-color); color: var(--text-primary); text-align: center; font-weight: 600;">Transactions</a>
-		<form method="POST" action="/logout" style="margin: 0;">
-			<button type="submit" style="width: 100%; padding: 12px 14px; border-radius: 10px; background: #4338ca; border: none; color: white; font-weight: 600; font-size: 16px; cursor: pointer;">Log out</button>
+<div class="app-shell">
+	<nav class="sidebar glass only-desktop" aria-label="Main navigation">
+		<div class="sidebar-brand">
+			{{template "logo"}}
+			<span>crdledger<small>Never forget who owes who</small></span>
+		</div>
+		<a class="nav-link" data-nav="/dashboard" href="/dashboard">{{template "icon_dashboard"}} Dashboard</a>
+		<a class="nav-link" data-nav="/profile/edit" href="/profile/edit">{{template "icon_profile"}} Edit profile</a>
+		<a class="nav-link" data-nav="/transactions/new" href="/transactions/new">{{template "icon_record"}} Record a transaction</a>
+		<a class="nav-link" data-nav="/transactions" href="/transactions">{{template "icon_list"}} Transactions</a>
+		<div class="sidebar-spacer"></div>
+		<form method="POST" action="/logout" style="margin:0;">
+			<button type="submit" class="nav-logout">{{template "icon_logout"}} Log out</button>
 		</form>
 	</nav>
-	<div style="flex: 1; min-width: 0;">
+
+	<header class="topbar glass-strong only-mobile" role="banner">
+		<a href="/dashboard" class="topbar-brand">{{template "logo"}} crdledger</a>
+		<a href="/profile/edit" class="avatar" aria-label="Edit profile">
+			{{if .PhotoPath}}<img src="{{.PhotoPath}}" alt="">{{else}}{{template "icon_profile"}}{{end}}
+		</a>
+	</header>
+
+	<main class="app-main" id="main-content">
+		<div class="toast-stack" id="toast-stack" aria-live="polite"></div>
 {{end}}
 {{define "sidebar_end"}}
-	</div>
+	</main>
+
+	<nav class="tabbar glass-strong only-mobile" aria-label="Primary">
+		<a class="tab-link" data-nav="/dashboard" href="/dashboard">{{template "icon_dashboard"}}<span>Home</span></a>
+		<a class="tab-link" data-nav="/transactions" href="/transactions">{{template "icon_list"}}<span>Ledger</span></a>
+		<a class="tab-link tab-fab" data-nav="/transactions/new" href="/transactions/new" aria-label="Record a transaction">
+			<span class="tab-fab-circle">{{template "icon_record"}}</span>
+		</a>
+		<a class="tab-link" data-nav="/profile/edit" href="/profile/edit">{{template "icon_profile"}}<span>Profile</span></a>
+		<form method="POST" action="/logout" style="margin:0; flex:1; display:flex;">
+			<button type="submit" class="tab-link" style="width:100%; background:transparent; padding:6px 4px;">{{template "icon_logout"}}<span>Log out</span></button>
+		</form>
+	</nav>
 </div>
+<script src="/static/js/htmx.min.js" defer></script>
+<script src="/static/js/app.js" defer></script>
 {{end}}
