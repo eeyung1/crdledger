@@ -105,3 +105,91 @@ works end to end.
 # RUN CODE
 
 SESSION_SECRET=temp-local-value go run ./cmd
+---
+
+## Production-readiness + UI pass (this update)
+
+Everything below stays inside the original constraints in `Agent.md`:
+plain Go templates, vanilla CSS/JS, **no framework, no build step**.
+
+### Design
+- New glass/ledger visual identity (dark navy + gold "wax seal" accent,
+  serif numerals for money, monospace for amounts) — see
+  `static/css/style.css`.
+- **Desktop**: persistent glass sidebar nav.
+  **Mobile**: sticky top bar + glass bottom tab bar with a raised
+  "record transaction" button — genuinely different layouts per
+  breakpoint, not just a squeezed desktop view.
+- 16px+ input font sizes (no iOS auto-zoom), visible focus rings,
+  `prefers-reduced-motion` respected, empty states, inline toasts.
+
+### PWA (installable app)
+- `static/manifest.json`, `static/service-worker.js`, app icons in
+  `static/icons/`, offline fallback at `static/offline.html`.
+- Service worker: network-first for pages (balances must never be
+  stale), cache-first for static assets, so it's genuinely useful
+  offline without ever showing a stale ledger.
+- Install prompt wired up in `static/js/app.js` (progressive
+  enhancement — everything still works with JS off).
+
+### Production hardening
+- CSRF protection (double-submit cookie) on every state-changing
+  request — `internal/middleware/csrf.go`.
+- Security headers (CSP, X-Frame-Options, nosniff, etc.) and optional
+  HSTS — `internal/middleware/security.go`.
+- Session cookies are now `Secure` (env-gated), `HttpOnly`,
+  `SameSite=Lax`, and expire after 30 days instead of living forever
+  in memory.
+- Per-IP rate limiting on login/register —
+  `internal/middleware/ratelimit.go`.
+- Panic recovery + structured JSON request logging.
+- Config read once in `main()` via `internal/config` (never a
+  package-level `os.Getenv` — see the lesson already in `Agent.md`).
+- Graceful shutdown on SIGTERM/SIGINT, `/healthz` endpoint, DB indexes
+  on `seller_id`/`buyer_id`, WAL mode.
+- `Dockerfile` for a single-binary deploy to Render/Railway/Fly, plus
+  `.env.example`.
+
+### Try it locally
+```
+cp .env.example .env      # edit SESSION_SECRET
+go run ./cmd
+```
+Open http://localhost:8080 on your phone (same network) or desktop —
+Chrome/Edge will offer an "Install" prompt once served over HTTPS (or
+localhost, which counts as a secure context).
+
+---
+
+## HTMX layer (this update)
+
+Self-hosted (`static/js/htmx.min.js`, no CDN, ~50KB) — one `<script>` tag,
+zero build step, fits the same constraints as everything else here.
+
+Wired into exactly three interactions, each chosen because it has a real
+UX payoff over a full-page reload — not applied blanket-wide (no
+`hx-boost`):
+
+1. **Mark as paid** (`templates/tx_row.html`) — swaps just that one row
+   in place instead of redirecting. `internal/handler/payment.go` detects
+   `HX-Request` and re-renders the single row (success *or* failure —
+   errors show inline on the row, not as a bare "500" flash).
+2. **Live search** (`templates/transactions_list.html`) — debounced
+   `hx-get` on the search input swaps `#tx-list-wrap`, with
+   `hx-push-url` so the URL/back-button still works.
+   `internal/handler/transactions_list.go` returns the
+   `tx_list_fragment` partial instead of a full page when it's an HTMX
+   request.
+3. **Record a transaction** (`templates/record_form.html`) — submits
+   inline; on success the form clears with a "Recorded ✓" banner so
+   someone settling several debts in one sitting never leaves the page.
+   `internal/handler/transaction.go`'s `RecordFormData` echoes back
+   whatever was typed on a validation error, so a typo doesn't cost you
+   the whole form.
+
+**Every one of these still works with JavaScript off or htmx failing to
+load**: each `hx-post`/`hx-get` sits on a real `<form action="..."
+method="...">` (or `hx-push-url`'d GET), so the browser's native
+submission is the fallback, and the handlers branch on the `HX-Request`
+header to decide fragment vs. full-page response. Progressive
+enhancement, not a requirement.
