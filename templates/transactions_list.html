@@ -2,52 +2,30 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="stylesheet" href="/static/css/style.css">
+	{{template "pwa_head" .}}
 	<title>{{.Title}} — crdledger</title>
 </head>
 <body class="dark">
 {{template "sidebar" .}}
-	<h1>{{.Title}}</h1>
+	<p class="eyebrow">The ledger</p>
+	<h1 style="margin-bottom:22px;">{{.Title}}</h1>
 
-	<form method="GET" action="{{.BasePath}}">
-		<input type="text" name="q" placeholder="Search by name or username" value="{{.Query}}">
-		<button type="submit" class="btn-primary">Search</button>
-		{{if .Query}}<a href="{{.BasePath}}">Clear</a>{{end}}
+	<form method="GET" action="{{.BasePath}}" class="search-form btn-row" role="search">
+		<input type="text" name="q" placeholder="Search by name or username" value="{{.Query}}"
+			hx-get="{{.BasePath}}" hx-trigger="keyup changed delay:400ms, search" hx-target="#tx-list-wrap"
+			hx-swap="innerHTML" hx-push-url="true" hx-indicator="#search-spinner">
+		<button type="submit" class="btn btn-ghost">
+			<span id="search-spinner" class="htmx-indicator spinner"></span>
+			Search
+		</button>
+		{{if .Query}}<a href="{{.BasePath}}" class="btn btn-ghost" style="text-decoration:none;">Clear</a>{{end}}
 	</form>
 
-	{{if .Transactions}}
-	<table style="background: var(--navy-card); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden;">
-		<tr style="border-color: var(--border-color);">
-			<th style="border-color: var(--border-color); color: var(--text-secondary);">With</th>
-			<th style="border-color: var(--border-color); color: var(--text-secondary);">Amount</th>
-			<th style="border-color: var(--border-color); color: var(--text-secondary);">Description</th>
-			<th style="border-color: var(--border-color); color: var(--text-secondary);">Status</th>
-			<th style="border-color: var(--border-color); color: var(--text-secondary);">Paid on</th>
-			<th style="border-color: var(--border-color);"></th>
-		</tr>
-		{{range .Transactions}}
-		<tr style="border-color: var(--border-color);">
-			<td style="border-color: var(--border-color);">{{.CounterpartName}}</td>
-			<td style="border-color: var(--border-color);">{{.Amount}}</td>
-			<td style="border-color: var(--border-color);">{{.Description}}</td>
-			<td style="border-color: var(--border-color);">{{.Status}}</td>
-			<td style="border-color: var(--border-color);">{{if .PaidAt}}{{.PaidAt.Format "2006-01-02"}}{{end}}</td>
-			<td style="border-color: var(--border-color);">
-				{{if and .IsSeller (eq .Status "pending")}}
-				<form method="POST" action="/transactions/mark-paid" style="margin: 0;">
-					<input type="hidden" name="transaction_id" value="{{.ID}}">
-					<input type="date" name="paid_date" required style="width: auto;">
-					<button type="submit" class="btn-primary" style="width: auto; padding: 8px 12px; font-size: 14px;">Mark as paid</button>
-				</form>
-				{{end}}
-			</td>
-		</tr>
-		{{end}}
-	</table>
-	{{else}}
-	<p>No transactions match your search.</p>
-	{{end}}
+	<div id="tx-list-wrap">
+		{{template "tx_list_fragment" .}}
+	</div>
 {{template "sidebar_end" .}}
 </body>
 </html>
