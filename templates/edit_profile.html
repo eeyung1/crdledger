@@ -2,30 +2,31 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="stylesheet" href="/static/css/style.css">
+	{{template "pwa_head" .}}
 	<title>Edit profile — crdledger</title>
 </head>
 <body class="dark">
 {{template "sidebar" .}}
-	<h1>Edit profile</h1>
+	<p class="eyebrow">Your account</p>
+	<h1 style="margin-bottom:22px;">Edit profile</h1>
 
-	{{if .PhotoPath}}
-	<img src="{{.PhotoPath}}" alt="Profile photo" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin-bottom: 16px;">
-	{{else}}
-	{{template "logo"}}
-	{{end}}
+	<div class="avatar lg" style="margin-bottom:18px;">
+		{{if .PhotoPath}}<img src="{{.PhotoPath}}" alt="">{{else}}{{template "logo"}}{{end}}
+	</div>
 
 	{{if .PhotoError}}
-	<p class="error">{{.PhotoError}}</p>
+	<p class="error" role="alert">{{.PhotoError}}</p>
 	{{end}}
 
-	<form method="POST" action="/photo/upload" enctype="multipart/form-data" style="max-width: 340px;">
+	<form method="POST" action="/photo/upload" enctype="multipart/form-data" class="stack glass card">
+		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 		<label>
 			{{if .PhotoPath}}Change{{else}}Add{{end}} profile photo
 			<input type="file" name="photo" accept="image/jpeg,image/png,image/gif" required>
 		</label>
-		<button type="submit" class="btn-primary">Upload</button>
+		<button type="submit" class="btn-primary">Upload photo</button>
 	</form>
 {{template "sidebar_end" .}}
 </body>
