@@ -35,12 +35,24 @@ func (h *TransactionsListHandler) render(w http.ResponseWriter, r *http.Request,
 	query := r.URL.Query().Get("q")
 	transactions := service.FilterTransactions(roleFiltered, query)
 
-	h.templates.ExecuteTemplate(w, "transactions_list.html", map[string]any{
-		"Title":        title,
-		"BasePath":     r.URL.Path,
-		"Transactions": transactions,
-		"Query":        query,
-	})
+	csrfToken := middleware.CSRFTokenFromContext(r)
+	data := map[string]any{
+		"Title":     title,
+		"BasePath":  r.URL.Path,
+		"Rows":      buildTxRows(transactions, csrfToken),
+		"Query":     query,
+		"CSRFToken": csrfToken,
+	}
+
+	// HTMX-driven search only needs the list fragment re-rendered, not the
+	// whole page (sidebar, head, etc). Falls back to a full page for
+	// regular navigation / no-JS.
+	if isHTMXRequest(r) {
+		h.templates.ExecuteTemplate(w, "tx_list_fragment", data)
+		return
+	}
+
+	h.templates.ExecuteTemplate(w, "transactions_list.html", data)
 }
 
 func (h *TransactionsListHandler) Creditors(w http.ResponseWriter, r *http.Request) {
