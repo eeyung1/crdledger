@@ -1,24 +1,28 @@
 package service
 
 import (
-	"time"
+	"errors"
 	"strings"
+	"time"
+
 	"crdledger/internal/models"
 	"crdledger/internal/repository"
 )
 
+var ErrNotParticipant = errors.New("you are not a participant in this transaction")
+
 // TransactionView is a role-aware presentation of a transaction from the
 // perspective of the currently logged-in user.
 type TransactionView struct {
-	ID              int64
-	CounterpartName string
+	ID                  int64
+	CounterpartName     string
 	CounterpartUsername string
-	Role            string // "You are owed" or "You owe"
-	Amount          float64
-	Description     string
-	Status          string
-	IsSeller        bool
-	PaidAt          *time.Time
+	Role                string // "You are owed" or "You owe"
+	Amount              float64
+	Description         string
+	Status              string
+	IsSeller            bool
+	PaidAt              *time.Time
 }
 
 type Balance struct {
@@ -64,6 +68,20 @@ func (s *BalanceService) GetBalance(userID int64) (*Balance, error) {
 	return balance, nil
 }
 
+// GetTransactionView returns the up-to-date, role-aware view of a single
+// transaction — used to re-render just one row after an HTMX action
+// (e.g. mark-paid) instead of reloading the whole list.
+func (s *BalanceService) GetTransactionView(transactionID, userID int64) (TransactionView, error) {
+	t, err := s.transactions.GetByID(transactionID)
+	if err != nil {
+		return TransactionView{}, err
+	}
+	if t.SellerID != userID && t.BuyerID != userID {
+		return TransactionView{}, ErrNotParticipant
+	}
+	return s.toView(*t, userID)
+}
+
 func (s *BalanceService) toView(t models.Transaction, userID int64) (TransactionView, error) {
 	isSeller := t.SellerID == userID
 
@@ -83,15 +101,15 @@ func (s *BalanceService) toView(t models.Transaction, userID int64) (Transaction
 	}
 
 	return TransactionView{
-		ID:              t.ID,
-		CounterpartName: counterpart.DisplayName,
+		ID:                  t.ID,
+		CounterpartName:     counterpart.DisplayName,
 		CounterpartUsername: counterpart.Username,
-		Role:            role,
-		Amount:          t.Amount,
-		Description:     t.Description,
-		Status:          t.Status,
-		IsSeller:        isSeller,
-		PaidAt:          t.PaidAt,
+		Role:                role,
+		Amount:              t.Amount,
+		Description:         t.Description,
+		Status:              t.Status,
+		IsSeller:            isSeller,
+		PaidAt:              t.PaidAt,
 	}, nil
 }
 
