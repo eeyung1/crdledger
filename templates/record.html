@@ -2,33 +2,17 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="stylesheet" href="/static/css/style.css">
+	{{template "pwa_head" .}}
 	<title>Record a transaction — crdledger</title>
 </head>
 <body class="dark">
 {{template "sidebar" .}}
-	<h1>Record a transaction</h1>
+	<p class="eyebrow">New entry</p>
+	<h1 style="margin-bottom:22px;">Record a transaction</h1>
 
-	{{if .Error}}
-	<p class="error">{{.Error}}</p>
-	{{end}}
-
-	<form method="POST" action="/transactions/new" style="max-width: 340px;">
-		<label>
-			Buyer's username
-			<input type="text" name="buyer_username" required>
-		</label>
-		<label>
-			Amount
-			<input type="number" name="amount" step="0.01" min="0.01" required>
-		</label>
-		<label>
-			Description
-			<input type="text" name="description" required>
-		</label>
-		<button type="submit" class="btn-primary">Record</button>
-	</form>
+	{{template "record_form" .}}
 {{template "sidebar_end" .}}
 </body>
 </html>
