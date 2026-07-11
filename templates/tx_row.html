@@ -1,0 +1,27 @@
+{{define "tx_row"}}
+<div class="tx-row glass" id="tx-{{.Tx.ID}}">
+	<div class="tx-avatar">{{slice .Tx.CounterpartName 0 1}}</div>
+	<div class="tx-main">
+		<div class="tx-name">{{.Tx.CounterpartName}}</div>
+		<div class="tx-desc">{{.Tx.Description}}</div>
+		<span class="status-pill {{.Tx.Status}}">{{.Tx.Status}}{{if .Tx.PaidAt}} · {{.Tx.PaidAt.Format "Jan 2, 2006"}}{{end}}</span>
+		{{if .Error}}<div class="tx-error">{{.Error}}</div>{{end}}
+	</div>
+	<div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+		<div class="tx-amount">{{.Tx.Amount}}</div>
+		{{if and .Tx.IsSeller (eq .Tx.Status "pending")}}
+		<form method="POST" action="/transactions/mark-paid" class="tx-actions"
+			hx-post="/transactions/mark-paid" hx-target="closest .tx-row" hx-swap="outerHTML"
+			hx-indicator="#paid-spinner-{{.Tx.ID}}">
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+			<input type="hidden" name="transaction_id" value="{{.Tx.ID}}">
+			<input type="date" name="paid_date" required>
+			<button type="submit" class="btn btn-primary btn-sm">
+				<span id="paid-spinner-{{.Tx.ID}}" class="htmx-indicator spinner"></span>
+				Mark paid
+			</button>
+		</form>
+		{{end}}
+	</div>
+</div>
+{{end}}
