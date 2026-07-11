@@ -21,5 +21,7 @@ func (h *TransactionsMenuHandler) Menu(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.templates.ExecuteTemplate(w, "transactions_menu.html", nil)
+	h.templates.ExecuteTemplate(w, "transactions_menu.html", map[string]any{
+		"CSRFToken": middleware.CSRFTokenFromContext(r),
+	})
 }
