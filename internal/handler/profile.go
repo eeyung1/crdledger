@@ -33,5 +33,6 @@ func (h *ProfileHandler) EditProfilePage(w http.ResponseWriter, r *http.Request)
 	h.templates.ExecuteTemplate(w, "edit_profile.html", map[string]any{
 		"PhotoPath":  user.PhotoPath,
 		"PhotoError": r.URL.Query().Get("photo_error"),
+		"CSRFToken":  middleware.CSRFTokenFromContext(r),
 	})
 }
