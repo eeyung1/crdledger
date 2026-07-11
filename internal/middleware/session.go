@@ -5,18 +5,46 @@ import (
 	"encoding/hex"
 	"net/http"
 	"sync"
+	"time"
 )
 
 const SessionCookieName = "session_id"
 
+// SessionTTL controls both how long a session cookie lives in the browser
+// and how long the server honors it.
+const SessionTTL = 30 * 24 * time.Hour
+
+type sessionEntry struct {
+	userID    int64
+	expiresAt time.Time
+}
+
 type SessionStore struct {
 	mu       sync.Mutex
-	sessions map[string]int64 // session token -> user ID
+	sessions map[string]sessionEntry
+	// SecureCookies should be true whenever the app is served over HTTPS.
+	SecureCookies bool
 }
 
 func NewSessionStore() *SessionStore {
-	return &SessionStore{
-		sessions: make(map[string]int64),
+	s := &SessionStore{
+		sessions: make(map[string]sessionEntry),
+	}
+	go s.expireLoop()
+	return s
+}
+
+func (s *SessionStore) expireLoop() {
+	ticker := time.NewTicker(1 * time.Hour)
+	for range ticker.C {
+		s.mu.Lock()
+		now := time.Now()
+		for token, entry := range s.sessions {
+			if now.After(entry.expiresAt) {
+				delete(s.sessions, token)
+			}
+		}
+		s.mu.Unlock()
 	}
 }
 
@@ -27,7 +55,7 @@ func (s *SessionStore) Create(userID int64) (string, error) {
 	}
 
 	s.mu.Lock()
-	s.sessions[token] = userID
+	s.sessions[token] = sessionEntry{userID: userID, expiresAt: time.Now().Add(SessionTTL)}
 	s.mu.Unlock()
 
 	return token, nil
@@ -37,14 +65,44 @@ func (s *SessionStore) UserID(token string) (int64, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	userID, ok := s.sessions[token]
-	return userID, ok
+	entry, ok := s.sessions[token]
+	if !ok || time.Now().After(entry.expiresAt) {
+		return 0, false
+	}
+	return entry.userID, true
 }
 
 func (s *SessionStore) Destroy(token string) {
 	s.mu.Lock()
 	delete(s.sessions, token)
 	s.mu.Unlock()
+}
+
+// SetCookie writes the session cookie with the flags appropriate for the
+// current environment (Secure only when served over HTTPS).
+func (s *SessionStore) SetCookie(w http.ResponseWriter, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   s.SecureCookies,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   int(SessionTTL.Seconds()),
+	})
+}
+
+// ClearCookie logs the browser out of the session cookie.
+func (s *SessionStore) ClearCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   s.SecureCookies,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
 }
 
 func generateToken() (string, error) {
