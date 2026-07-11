@@ -1,12 +1,19 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"html/template"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"crdledger/internal/config"
 	"crdledger/internal/handler"
 	"crdledger/internal/middleware"
 	"crdledger/internal/repository"
@@ -16,11 +23,15 @@ import (
 )
 
 func main() {
-	if _, ok := os.LookupEnv("SESSION_SECRET"); !ok {
-		log.Fatal("SESSION_SECRET environment variable is required but not set")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	db, err := sql.Open("sqlite3", "./crdledger.db")
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
+	db, err := sql.Open("sqlite3", cfg.DBPath+"?_journal_mode=WAL&_foreign_keys=on")
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
 	}
@@ -34,7 +45,7 @@ func main() {
 		log.Fatalf("failed to create tables: %v", err)
 	}
 
-	log.Println("database ready: crdledger.db")
+	slog.Info("database ready", "path", cfg.DBPath)
 
 	templates, err := template.ParseGlob("templates/*.html")
 	if err != nil {
@@ -47,18 +58,44 @@ func main() {
 	authService := service.NewAuthService(userRepo)
 	transactionService := service.NewTransactionService(transactionRepo, userRepo)
 	balanceService := service.NewBalanceService(transactionRepo, userRepo)
+	photoService := service.NewPhotoService(userRepo)
 
 	sessions := middleware.NewSessionStore()
+	sessions.SecureCookies = cfg.SecureCookies
 
 	authHandler := handler.NewAuthHandler(authService, sessions, templates)
 	dashboardHandler := handler.NewDashboardHandler(userRepo, balanceService, templates)
-	transactionHandler := handler.NewTransactionHandler(transactionService, templates)
+	transactionHandler := handler.NewTransactionHandler(transactionService, balanceService, templates)
+	transactionsMenuHandler := handler.NewTransactionsMenuHandler(templates)
+	transactionsListHandler := handler.NewTransactionsListHandler(balanceService, templates)
+	photoHandler := handler.NewPhotoHandler(photoService, templates)
+	profileHandler := handler.NewProfileHandler(userRepo, templates)
+
+	csrf := middleware.CSRF(cfg.SecureCookies)
+	authLimiter := middleware.NewRateLimiter(10, time.Minute)
 
 	mux := http.NewServeMux()
+
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.HandleFunc("/service-worker.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/javascript")
+		w.Header().Set("Service-Worker-Allowed", "/")
+		w.Header().Set("Cache-Control", "no-cache")
+		http.ServeFile(w, r, "static/service-worker.js")
+	})
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		if err := db.Ping(); err != nil {
+			http.Error(w, "db unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
-			http.NotFound(w, r)
+			w.WriteHeader(http.StatusNotFound)
+			templates.ExecuteTemplate(w, "not_found.html", nil)
 			return
 		}
 		if _, ok := sessions.CurrentUserID(r); ok {
@@ -67,26 +104,52 @@ func main() {
 		}
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	})
-	mux.HandleFunc("/register", authHandler.RegisterPage)
-	mux.HandleFunc("/login", authHandler.LoginPage)
-	mux.HandleFunc("/logout", authHandler.Logout)
-	mux.HandleFunc("/dashboard", sessions.RequireAuth(dashboardHandler.Dashboard))
-	transactionsMenuHandler := handler.NewTransactionsMenuHandler(templates)
-	mux.HandleFunc("/transactions", sessions.RequireAuth(transactionsMenuHandler.Menu))
-	transactionsListHandler := handler.NewTransactionsListHandler(balanceService, templates)
-	mux.HandleFunc("/transactions/creditors", sessions.RequireAuth(transactionsListHandler.Creditors))
-	mux.HandleFunc("/transactions/debtors", sessions.RequireAuth(transactionsListHandler.Debtors))
-	mux.HandleFunc("/transactions/new", sessions.RequireAuth(transactionHandler.RecordPage))
-	mux.HandleFunc("/transactions/mark-paid", sessions.RequireAuth(transactionHandler.MarkPaid))
-	photoService := service.NewPhotoService(userRepo)
-	photoHandler := handler.NewPhotoHandler(photoService, templates)
-	profileHandler := handler.NewProfileHandler(userRepo, templates)
-	mux.HandleFunc("/profile/edit", sessions.RequireAuth(profileHandler.EditProfilePage))
-	mux.HandleFunc("/photo/upload", sessions.RequireAuth(photoHandler.Upload))
 
-	log.Println("listening on :8080")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
-		log.Fatalf("server failed: %v", err)
+	mux.HandleFunc("/register", csrf(authLimiter.Limit(authHandler.RegisterPage)))
+	mux.HandleFunc("/login", csrf(authLimiter.Limit(authHandler.LoginPage)))
+	mux.HandleFunc("/logout", csrf(authHandler.Logout))
+	mux.HandleFunc("/dashboard", csrf(sessions.RequireAuth(dashboardHandler.Dashboard)))
+	mux.HandleFunc("/transactions", csrf(sessions.RequireAuth(transactionsMenuHandler.Menu)))
+	mux.HandleFunc("/transactions/creditors", csrf(sessions.RequireAuth(transactionsListHandler.Creditors)))
+	mux.HandleFunc("/transactions/debtors", csrf(sessions.RequireAuth(transactionsListHandler.Debtors)))
+	mux.HandleFunc("/transactions/new", csrf(sessions.RequireAuth(transactionHandler.RecordPage)))
+	mux.HandleFunc("/transactions/mark-paid", csrf(sessions.RequireAuth(transactionHandler.MarkPaid)))
+	mux.HandleFunc("/profile/edit", csrf(sessions.RequireAuth(profileHandler.EditProfilePage)))
+	mux.HandleFunc("/photo/upload", csrf(sessions.RequireAuth(photoHandler.Upload)))
+
+	var root http.Handler = mux
+	root = middleware.SecurityHeaders(root)
+	if cfg.SecureCookies {
+		root = middleware.HSTS(root)
+	}
+	root = middleware.RequestLog(root)
+	root = middleware.Recover(root)
+
+	srv := &http.Server{
+		Addr:              ":" + cfg.Port,
+		Handler:           root,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	go func() {
+		slog.Info("listening", "port", cfg.Port, "environment", cfg.Environment)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("server failed: %v", err)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	<-stop
+
+	slog.Info("shutting down")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		slog.Error("graceful shutdown failed", "error", err)
 	}
 }
 
@@ -113,11 +176,21 @@ func createTables(db *sql.DB) error {
 		paid_at DATETIME
 	);`
 
+	indexes := []string{
+		`CREATE INDEX IF NOT EXISTS idx_transactions_seller ON transactions(seller_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_transactions_buyer ON transactions(buyer_id);`,
+	}
+
 	if _, err := db.Exec(usersTable); err != nil {
 		return err
 	}
 	if _, err := db.Exec(transactionsTable); err != nil {
 		return err
+	}
+	for _, idx := range indexes {
+		if _, err := db.Exec(idx); err != nil {
+			return err
+		}
 	}
 	return nil
 }
