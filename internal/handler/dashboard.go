@@ -44,5 +44,6 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		"PhotoError":      r.URL.Query().Get("photo_error"),
 		"TotalReceivable": balance.TotalReceivable,
 		"TotalOwed":       balance.TotalOwed,
+		"CSRFToken":       middleware.CSRFTokenFromContext(r),
 	})
 }
