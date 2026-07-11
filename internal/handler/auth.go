@@ -21,7 +21,9 @@ func NewAuthHandler(auth *service.AuthService, sessions *middleware.SessionStore
 
 func (h *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		h.templates.ExecuteTemplate(w, "register.html", nil)
+		h.templates.ExecuteTemplate(w, "register.html", map[string]any{
+			"CSRFToken": middleware.CSRFTokenFromContext(r),
+		})
 		return
 	}
 
@@ -45,7 +47,10 @@ func (h *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 		default:
 			errMsg = "Something went wrong. Please try again."
 		}
-		h.templates.ExecuteTemplate(w, "register.html", map[string]string{"Error": errMsg})
+		h.templates.ExecuteTemplate(w, "register.html", map[string]any{
+			"Error":     errMsg,
+			"CSRFToken": middleware.CSRFTokenFromContext(r),
+		})
 		return
 	}
 
@@ -55,12 +60,6 @@ func (h *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     middleware.SessionCookieName,
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-	})
-
+	h.sessions.SetCookie(w, token)
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
