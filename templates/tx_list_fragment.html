@@ -1,0 +1,12 @@
+{{define "tx_list_fragment"}}
+{{if .Rows}}
+<div class="tx-list">
+	{{range .Rows}}{{template "tx_row" .}}{{end}}
+</div>
+{{else}}
+<div class="empty-state glass">
+	{{template "icon_empty"}}
+	<p>{{if .Query}}No transactions match "{{.Query}}".{{else}}Nothing here yet — record a transaction to start the ledger.{{end}}</p>
+</div>
+{{end}}
+{{end}}
