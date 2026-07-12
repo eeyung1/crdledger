@@ -36,7 +36,14 @@ func (h *TransactionHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	markErr := h.transactions.MarkPaid(id, userID, paidAt)
+	amountStr := r.FormValue("amount_paid")
+	amountPaid, err := strconv.ParseFloat(amountStr, 64)
+	if err != nil {
+		http.Error(w, "invalid payment amount", http.StatusBadRequest)
+		return
+	}
+
+	markErr := h.transactions.MarkPaid(id, userID, amountPaid, paidAt)
 
 	if isHTMXRequest(r) {
 		h.renderRowFragment(w, r, id, userID, markErr)
@@ -77,6 +84,10 @@ func (h *TransactionHandler) renderRowFragment(w http.ResponseWriter, r *http.Re
 			errMsg = "Payment date can't be in the future."
 		case errors.Is(markErr, service.ErrPaidDateBeforeCreated):
 			errMsg = "Payment date can't be before the transaction was created."
+		case errors.Is(markErr, service.ErrInvalidPaymentAmount):
+			errMsg = "Enter an amount greater than zero."
+		case errors.Is(markErr, service.ErrPaymentExceedsBalance):
+			errMsg = "That's more than the remaining balance."
 		default:
 			errMsg = "Something went wrong — please try again."
 		}
@@ -99,6 +110,10 @@ func httpErrorForMarkPaid(w http.ResponseWriter, err error) {
 		http.Error(w, "payment date cannot be in the future", http.StatusBadRequest)
 	case errors.Is(err, service.ErrPaidDateBeforeCreated):
 		http.Error(w, "payment date cannot be before the transaction was created", http.StatusBadRequest)
+	case errors.Is(err, service.ErrInvalidPaymentAmount):
+		http.Error(w, "payment amount must be positive", http.StatusBadRequest)
+	case errors.Is(err, service.ErrPaymentExceedsBalance):
+		http.Error(w, "payment amount is more than the remaining balance", http.StatusBadRequest)
 	default:
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 	}

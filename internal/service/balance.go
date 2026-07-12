@@ -31,9 +31,12 @@ type TransactionView struct {
 	IsSeller            bool
 	CreatedAt           time.Time
 	PaidAt              *time.Time
-	PhotoPath           string // optional receipt photo, empty if none was attached
-	DaysPending         int    // 0 once paid; only meaningful while Status == "pending"
-	ReminderText        string // pre-written nudge, only set when a reminder is sensible to offer
+	PhotoPath           string  // optional receipt photo, empty if none was attached
+	DaysPending         int     // 0 once paid; only meaningful while Status == "pending"
+	ReminderText        string  // pre-written nudge, only set when a reminder is sensible to offer
+	AmountPaid          float64 // running total paid so far
+	RemainingBalance    float64 // Amount - AmountPaid; 0 once fully paid
+	IsPartial           bool    // true when some (but not all) of the amount has been paid
 }
 
 // CounterpartyNet is one bar in the "who owes who the most" chart — pending
@@ -90,13 +93,14 @@ func (s *BalanceService) GetBalance(userID int64) (*Balance, error) {
 		}
 
 		if t.Status == "pending" {
+			remaining := t.Amount - t.AmountPaid
 			key := view.CounterpartName + "|" + view.CounterpartUsername
 			if t.SellerID == userID {
-				balance.TotalReceivable += t.Amount
-				netByCounterparty[key] += t.Amount
+				balance.TotalReceivable += remaining
+				netByCounterparty[key] += remaining
 			} else {
-				balance.TotalOwed += t.Amount
-				netByCounterparty[key] -= t.Amount
+				balance.TotalOwed += remaining
+				netByCounterparty[key] -= remaining
 			}
 		}
 
@@ -270,6 +274,7 @@ func (s *BalanceService) toView(t models.Transaction, userID int64) (Transaction
 		return TransactionView{}, err
 	}
 
+	remaining := t.Amount - t.AmountPaid
 	view := TransactionView{
 		ID:                  t.ID,
 		CounterpartName:     counterpart.DisplayName,
@@ -281,6 +286,9 @@ func (s *BalanceService) toView(t models.Transaction, userID int64) (Transaction
 		IsSeller:            isSeller,
 		CreatedAt:           t.CreatedAt,
 		PaidAt:              t.PaidAt,
+		AmountPaid:          t.AmountPaid,
+		RemainingBalance:    remaining,
+		IsPartial:           t.Status == "pending" && t.AmountPaid > 0,
 	}
 	if t.PhotoPath != nil {
 		view.PhotoPath = *t.PhotoPath

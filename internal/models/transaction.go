@@ -12,4 +12,5 @@ type Transaction struct {
 	CreatedAt   time.Time
 	PaidAt      *time.Time
 	PhotoPath   *string // optional receipt/evidence photo, nil if none was attached
+	AmountPaid  float64 // running total paid so far; equals Amount once Status is "paid"
 }

@@ -201,6 +201,12 @@ func createTables(db *sql.DB) error {
 		}
 	}
 
+	if _, err := db.Exec(`ALTER TABLE transactions ADD COLUMN amount_paid REAL NOT NULL DEFAULT 0`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") {
+			return err
+		}
+	}
+
 	for _, idx := range indexes {
 		if _, err := db.Exec(idx); err != nil {
 			return err

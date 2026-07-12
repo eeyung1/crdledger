@@ -5,10 +5,13 @@
 		<div class="tx-name">{{.Tx.CounterpartName}}</div>
 		<div class="tx-desc">{{.Tx.Description}}</div>
 		<div class="tx-meta-row">
-			<span class="status-pill {{.Tx.Status}}">
+			<span class="status-pill {{if .Tx.IsPartial}}partial{{else}}{{.Tx.Status}}{{end}}">
 				{{if eq .Tx.Status "paid"}}{{template "icon_check"}}{{end}}
-				{{.Tx.Status}}{{if .Tx.PaidAt}} · {{.Tx.PaidAt.Format "Jan 2, 2006"}}{{end}}
+				{{if .Tx.IsPartial}}partial{{else}}{{.Tx.Status}}{{end}}{{if .Tx.PaidAt}} · {{.Tx.PaidAt.Format "Jan 2, 2006"}}{{end}}
 			</span>
+			{{if .Tx.IsPartial}}
+			<span class="text-footnote">{{printf "%.2f" .Tx.AmountPaid}} paid · {{printf "%.2f" .Tx.RemainingBalance}} remaining</span>
+			{{end}}
 			{{if eq .Tx.Status "pending"}}
 			<span class="text-footnote">{{if eq .Tx.DaysPending 0}}today{{else if eq .Tx.DaysPending 1}}1 day pending{{else}}{{.Tx.DaysPending}} days pending{{end}}</span>
 			{{end}}
@@ -26,6 +29,7 @@
 			hx-indicator="#paid-spinner-{{.Tx.ID}}">
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 			<input type="hidden" name="transaction_id" value="{{.Tx.ID}}">
+			<input type="number" name="amount_paid" step="0.01" min="0.01" max="{{printf "%.2f" .Tx.RemainingBalance}}" value="{{printf "%.2f" .Tx.RemainingBalance}}" required aria-label="Amount paid">
 			<input type="date" name="paid_date" required>
 			<button type="submit" class="btn btn-primary btn-sm">
 				<span id="paid-spinner-{{.Tx.ID}}" class="htmx-indicator spinner" aria-hidden="true"></span>

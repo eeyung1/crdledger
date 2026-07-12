@@ -633,3 +633,32 @@ button:disabled, .btn:disabled { opacity: 0.6; cursor: default; transform: none;
 @media (max-width: 899px) {
 	.tx-desc { max-width: 46vw; }
 }
+
+.status-pill.partial {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.list-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: var(--space-3);
+	flex-wrap: wrap;
+	margin-bottom: var(--space-4);
+}
+
+.list-header .page-title {
+	margin-bottom: 0;
+}
+
+.list-header .search-form {
+	margin-bottom: 0;
+	min-width: 220px;
+}
+
+@media (max-width: 480px) {
+	.list-header .search-form {
+		flex-basis: 100%;
+	}
+}

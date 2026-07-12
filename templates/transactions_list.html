@@ -9,21 +9,25 @@
 </head>
 <body>
 {{template "sidebar" .}}
-	<p class="text-caption">The ledger</p>
-	<h1 class="text-title-1 page-title">{{.Title}}</h1>
+	<div class="list-header">
+		<div>
+			<p class="text-caption">The ledger</p>
+			<h1 class="text-title-1 page-title">{{.Title}}</h1>
+		</div>
 
-	{{if .ShowSearch}}
-	<form method="GET" action="{{.BasePath}}" class="search-form btn-row" role="search">
-		<input type="text" name="q" placeholder="Search by name or username" value="{{.Query}}"
-			hx-get="{{.BasePath}}" hx-trigger="keyup changed delay:400ms, search" hx-target="#tx-list-wrap"
-			hx-swap="innerHTML" hx-push-url="true" hx-indicator="#search-spinner">
-		<button type="submit" class="btn btn-ghost">
-			<span id="search-spinner" class="htmx-indicator spinner" aria-hidden="true"></span>
-			Search
-		</button>
-		{{if .Query}}<a href="{{.BasePath}}" class="btn btn-ghost">Clear</a>{{end}}
-	</form>
-	{{end}}
+		{{if .ShowSearch}}
+		<form method="GET" action="{{.BasePath}}" class="search-form btn-row" role="search">
+			<input type="text" name="q" placeholder="Search by name or username" value="{{.Query}}"
+				hx-get="{{.BasePath}}" hx-trigger="keyup changed delay:400ms, search" hx-target="#tx-list-wrap"
+				hx-swap="innerHTML" hx-push-url="true" hx-indicator="#search-spinner">
+			<button type="submit" class="btn btn-ghost">
+				<span id="search-spinner" class="htmx-indicator spinner" aria-hidden="true"></span>
+				Search
+			</button>
+			{{if .Query}}<a href="{{.BasePath}}" class="btn btn-ghost">Clear</a>{{end}}
+		</form>
+		{{end}}
+	</div>
 
 	<div id="tx-list-wrap">
 		{{template "tx_list_fragment" .}}
