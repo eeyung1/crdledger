@@ -13,11 +13,12 @@ import (
 type TransactionHandler struct {
 	transactions *service.TransactionService
 	balances     *service.BalanceService
+	photos       *service.PhotoService
 	templates    *template.Template
 }
 
-func NewTransactionHandler(transactions *service.TransactionService, balances *service.BalanceService, templates *template.Template) *TransactionHandler {
-	return &TransactionHandler{transactions: transactions, balances: balances, templates: templates}
+func NewTransactionHandler(transactions *service.TransactionService, balances *service.BalanceService, photos *service.PhotoService, templates *template.Template) *TransactionHandler {
+	return &TransactionHandler{transactions: transactions, balances: balances, photos: photos, templates: templates}
 }
 
 // RecordFormData backs the "record_form" partial — the form fields are
@@ -79,7 +80,27 @@ func (h *TransactionHandler) RecordPage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	_, err := h.transactions.Record(sellerID, buyerUsername, amount, description)
+	// The receipt photo is entirely optional — a missing file is not an
+	// error, only a genuinely invalid one is.
+	receiptPath := ""
+	if file, header, err := r.FormFile("receipt"); err == nil {
+		defer file.Close()
+		path, saveErr := h.photos.SaveReceipt(sellerID, header.Filename, header.Size, file)
+		if saveErr != nil {
+			switch {
+			case errors.Is(saveErr, service.ErrPhotoTooLarge):
+				respondError("That receipt photo is too big — please use one under 2MB.")
+			case errors.Is(saveErr, service.ErrInvalidPhotoType):
+				respondError("Receipt photos must be a JPG, PNG, or GIF.")
+			default:
+				respondError("Couldn't save that receipt photo. Please try again.")
+			}
+			return
+		}
+		receiptPath = path
+	}
+
+	_, err := h.transactions.Record(sellerID, buyerUsername, amount, description, receiptPath)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidAmount):
@@ -87,7 +108,7 @@ func (h *TransactionHandler) RecordPage(w http.ResponseWriter, r *http.Request) 
 		case errors.Is(err, service.ErrInvalidDescription):
 			respondError("Please enter a description.")
 		case errors.Is(err, service.ErrBuyerNotFound):
-			respondError("No user found with that username.")
+			respondError("We couldn't find that username — check the spelling and try again.")
 		case errors.Is(err, service.ErrCannotRecordSelf):
 			respondError("You cannot record a transaction with yourself.")
 		default:

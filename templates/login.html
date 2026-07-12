@@ -5,20 +5,20 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="stylesheet" href="/static/css/style.css">
 	{{template "pwa_head" .}}
-	<title>Log in — crdledger</title>
+	<title>Log in</title>
 </head>
-<body class="dark auth-page">
+<body class="auth-page">
 	<div class="auth-header">
 		{{template "logo"}}
-		<h1>crdledger</h1>
+		<h1 class="text-title-1">crdledger</h1>
 		<p>Never forget who owes who</p>
 	</div>
 
 	{{if .Error}}
-	<p class="error" role="alert">{{.Error}}</p>
+	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.Error}}</div>
 	{{end}}
 
-	<form class="auth-form glass card" method="POST" action="/login">
+	<form class="auth-form surface card stack" method="POST" action="/login">
 		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 		<label>
 			Username

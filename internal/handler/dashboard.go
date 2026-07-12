@@ -32,18 +32,35 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	balance, err := h.balances.GetBalance(userID)
-	if err != nil {
-		http.Error(w, "failed to load balance", http.StatusInternalServerError)
-		return
+	data := map[string]any{
+		"DisplayName": user.DisplayName,
+		"PhotoPath":   user.PhotoPath,
+		"PhotoError":  r.URL.Query().Get("photo_error"),
+		"CSRFToken":   middleware.CSRFTokenFromContext(r),
 	}
 
-	h.templates.ExecuteTemplate(w, "dashboard.html", map[string]any{
-		"DisplayName":     user.DisplayName,
-		"PhotoPath":       user.PhotoPath,
-		"PhotoError":      r.URL.Query().Get("photo_error"),
-		"TotalReceivable": balance.TotalReceivable,
-		"TotalOwed":       balance.TotalOwed,
-		"CSRFToken":       middleware.CSRFTokenFromContext(r),
-	})
+	// The dashboard totals are the single most trust-sensitive numbers in
+	// the app — on a load failure we show a retry banner, never a
+	// fabricated "0" that could be misread as "you're settled up".
+	balance, err := h.balances.GetBalance(userID)
+	if err != nil {
+		data["LoadError"] = true
+	} else {
+		data["TotalReceivable"] = balance.TotalReceivable
+		data["TotalOwed"] = balance.TotalOwed
+		data["NetPosition"] = balance.NetPosition
+		data["IsEmpty"] = len(balance.Transactions) == 0
+		data["TopCreditors"] = balance.TopCreditors
+		data["TopDebtors"] = balance.TopDebtors
+		data["CreditorBarData"] = NetBarChartData{Rows: balance.TopCreditors, Variant: "positive"}
+		data["DebtorBarData"] = NetBarChartData{Rows: balance.TopDebtors, Variant: "attention"}
+		data["Sparkline"] = balance.Sparkline
+		// A chart earns its place only once there's more than one or two
+		// numbers to compare — with a single counterparty the totals
+		// above already say everything the bar would.
+		data["ShowCreditorChart"] = len(balance.TopCreditors) > 1
+		data["ShowDebtorChart"] = len(balance.TopDebtors) > 1
+	}
+
+	h.templates.ExecuteTemplate(w, "dashboard.html", data)
 }

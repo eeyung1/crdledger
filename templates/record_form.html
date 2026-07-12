@@ -1,22 +1,19 @@
 {{define "record_form"}}
 <div id="record-form-wrap">
 	{{if .Success}}
-	<div class="record-success" role="status">
-		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-		Recorded. Add another below, or head to the ledger.
-	</div>
+	<div class="banner is-success" role="status">{{template "icon_check"}} Recorded. Add another below, or head to the ledger.</div>
 	{{end}}
 
 	{{if .Error}}
-	<p class="error" role="alert">{{.Error}}</p>
+	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.Error}}</div>
 	{{end}}
 
-	<form method="POST" action="/transactions/new" class="stack glass card"
-		hx-post="/transactions/new" hx-target="#record-form-wrap" hx-swap="outerHTML" hx-indicator="#record-spinner">
+	<form method="POST" action="/transactions/new" enctype="multipart/form-data" class="stack surface card"
+		hx-post="/transactions/new" hx-encoding="multipart/form-data" hx-target="#record-form-wrap" hx-swap="outerHTML" hx-indicator="#record-spinner">
 		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 		<label>
 			Buyer's username
-			<input type="text" name="buyer_username" placeholder="e.g. tobi_okafor" autocomplete="off" value="{{.BuyerUsername}}" required autofocus>
+			<input type="text" name="buyer_username" placeholder="e.g. maxchichar" autocomplete="off" value="{{.BuyerUsername}}" required autofocus>
 		</label>
 		<label>
 			Amount
@@ -25,6 +22,10 @@
 		<label>
 			Description
 			<input type="text" name="description" placeholder="e.g. provisions, phone credit" value="{{.Description}}" required>
+		</label>
+		<label>
+			Receipt photo <span class="text-footnote">(optional)</span>
+			<input type="file" name="receipt" accept="image/jpeg,image/png,image/gif">
 		</label>
 		<button type="submit" class="btn-primary">
 			<span id="record-spinner" class="htmx-indicator spinner"></span>

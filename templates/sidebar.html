@@ -1,6 +1,6 @@
 {{define "sidebar"}}
 <div class="app-shell">
-	<nav class="sidebar glass only-desktop" aria-label="Main navigation">
+	<nav class="sidebar only-desktop" aria-label="Main navigation">
 		<div class="sidebar-brand">
 			{{template "logo"}}
 			<span>crdledger<small>Never forget who owes who</small></span>
@@ -10,12 +10,13 @@
 		<a class="nav-link" data-nav="/transactions/new" href="/transactions/new">{{template "icon_record"}} Record a transaction</a>
 		<a class="nav-link" data-nav="/transactions" href="/transactions">{{template "icon_list"}} Transactions</a>
 		<div class="sidebar-spacer"></div>
-		<form method="POST" action="/logout" style="margin:0;">
+		<form method="POST" action="/logout" class="form-reset">
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 			<button type="submit" class="nav-logout">{{template "icon_logout"}} Log out</button>
 		</form>
 	</nav>
 
-	<header class="topbar glass-strong only-mobile" role="banner">
+	<header class="topbar only-mobile" role="banner">
 		<a href="/dashboard" class="topbar-brand">{{template "logo"}} crdledger</a>
 		<a href="/profile/edit" class="avatar" aria-label="Edit profile">
 			{{if .PhotoPath}}<img src="{{.PhotoPath}}" alt="">{{else}}{{template "icon_profile"}}{{end}}
@@ -28,15 +29,16 @@
 {{define "sidebar_end"}}
 	</main>
 
-	<nav class="tabbar glass-strong only-mobile" aria-label="Primary">
+	<nav class="tabbar only-mobile" aria-label="Primary">
 		<a class="tab-link" data-nav="/dashboard" href="/dashboard">{{template "icon_dashboard"}}<span>Home</span></a>
 		<a class="tab-link" data-nav="/transactions" href="/transactions">{{template "icon_list"}}<span>Ledger</span></a>
 		<a class="tab-link tab-fab" data-nav="/transactions/new" href="/transactions/new" aria-label="Record a transaction">
 			<span class="tab-fab-circle">{{template "icon_record"}}</span>
 		</a>
 		<a class="tab-link" data-nav="/profile/edit" href="/profile/edit">{{template "icon_profile"}}<span>Profile</span></a>
-		<form method="POST" action="/logout" style="margin:0; flex:1; display:flex;">
-			<button type="submit" class="tab-link" style="width:100%; background:transparent; padding:6px 4px;">{{template "icon_logout"}}<span>Log out</span></button>
+		<form method="POST" action="/logout" class="tab-logout-form">
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+			<button type="submit" class="tab-link tab-link-full">{{template "icon_logout"}}<span>Log out</span></button>
 		</form>
 	</nav>
 </div>

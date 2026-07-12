@@ -5,23 +5,25 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="stylesheet" href="/static/css/style.css">
 	{{template "pwa_head" .}}
-	<title>{{.Title}} — crdledger</title>
+	<title>{{.Title}} crdledger</title>
 </head>
-<body class="dark">
+<body>
 {{template "sidebar" .}}
-	<p class="eyebrow">The ledger</p>
-	<h1 style="margin-bottom:22px;">{{.Title}}</h1>
+	<p class="text-caption">The ledger</p>
+	<h1 class="text-title-1 page-title">{{.Title}}</h1>
 
+	{{if .ShowSearch}}
 	<form method="GET" action="{{.BasePath}}" class="search-form btn-row" role="search">
 		<input type="text" name="q" placeholder="Search by name or username" value="{{.Query}}"
 			hx-get="{{.BasePath}}" hx-trigger="keyup changed delay:400ms, search" hx-target="#tx-list-wrap"
 			hx-swap="innerHTML" hx-push-url="true" hx-indicator="#search-spinner">
 		<button type="submit" class="btn btn-ghost">
-			<span id="search-spinner" class="htmx-indicator spinner"></span>
+			<span id="search-spinner" class="htmx-indicator spinner" aria-hidden="true"></span>
 			Search
 		</button>
-		{{if .Query}}<a href="{{.BasePath}}" class="btn btn-ghost" style="text-decoration:none;">Clear</a>{{end}}
+		{{if .Query}}<a href="{{.BasePath}}" class="btn btn-ghost">Clear</a>{{end}}
 	</form>
+	{{end}}
 
 	<div id="tx-list-wrap">
 		{{template "tx_list_fragment" .}}

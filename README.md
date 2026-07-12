@@ -193,3 +193,84 @@ method="...">` (or `hx-push-url`'d GET), so the browser's native
 submission is the fallback, and the handlers branch on the `HX-Request`
 header to decide fragment vs. full-page response. Progressive
 enhancement, not a requirement.
+
+---
+
+## Status page, netting, and features (this update)
+
+Per the companion product brief. Same constraints: no framework, no
+build step, hand-rolled inline SVG charts (no charting library).
+
+### Status page spec
+
+**Decision: folded into the Dashboard rather than a separate page.**
+The brief's own spec for a status page — "headline number above the
+fold, two supporting numbers, one chart chosen by the actual question"
+— is what a dashboard's home screen should already be. Adding a second,
+separate "/status" page would either duplicate the dashboard or steal
+its reason to exist; a ruthless editor cuts the redundant screen, not
+the redundant work. `templates/dashboard.html` / `internal/handler/dashboard.go`.
+
+- **Headline, above the fold**: net position (`TotalReceivable -
+  TotalOwed`) as one signed number — `+142.50` in emerald if you're owed
+  more, `-80.00` in amber if you owe more, neutral/no-hue if exactly
+  `0`. A trailing 8-week sparkline (`<polyline>`, no axes/gridlines)
+  sits beside it purely to answer "trending up or down," not to be a
+  full chart. Owed-to-you / you-owe sit directly below as smaller
+  supporting numbers.
+- **Two bar charts, only when they earn their place**: "Who owes you
+  the most" / "who you owe the most" — each a `<rect>` per person with
+  a server-computed width (`internal/service/balance.go:splitAndRankNet`),
+  capped at 5 bars. Name + amount are real HTML text next to each bar,
+  never color-only. **They only render once there's more than one
+  counterparty** (`ShowCreditorChart`/`ShowDebtorChart`) — with a single
+  person, the total above already says everything the bar would; per
+  the brief, a chart comparing one thing to nothing is dead weight.
+- **States**: zero balance ("You're all settled up," no chart); one
+  counterparty (numbers only, no bar chart); many (both charts, top 5
+  each); loading (full-page render is the loading state — no client
+  fetch, so no skeleton needed here); error (banner + retry, balance
+  numbers never fall back to a fabricated `0`).
+- **Debt netting** happens before any of this reaches the template —
+  `splitAndRankNet` collapses "Alice owes Bob ₦500 / Bob owes Alice
+  ₦300" into one `+₦200` bar, never two contradictory line items. The
+  underlying transaction ledger is untouched (each transaction still has
+  its own pay/mark-paid lifecycle) — netting is a view, not a rewrite of
+  the source of truth.
+
+### Feature shortlist
+
+| Feature | Precedent | Problem it solves | Verdict |
+|---|---|---|---|
+| **Debt netting** | Splitwise/Settle Up's core simplification | Two contradictory line items read as less certain than one net figure — directly serves "who owes who, how much" | **Built** — dashboard bar charts |
+| **Gentle reminders (manual)** | Near-universal in IOU apps | Waiting to be reminded is the actual friction point | **Built, manual only** — "days pending" indicator + a "Copy reminder" button that fills the clipboard with a pre-written nudge, paste into whatever chat app you already use. No email/push infra, no new trust surface (frequency, tone, opt-out) — exactly the brief's "evaluate manual first" |
+| **CSV export** | Nearly universal | Honest answer to "what if I need this outside the app" | **Built** — `/transactions/export.csv`, one query, stdlib `encoding/csv` |
+| **Receipt/proof photo** | Splitwise itemized receipts | Reuses existing photo-upload infra; real payoff in a dispute | **Built, optional** — one extra `<input type="file">` on the record form, never required |
+| **Audit info (who/when)** | Universal in ledger products | Byproduct of `created_at`/`paid_at`, already captured | **Built, lightweight** — "12 days pending" / "paid · Jan 2" surfaced on each row, no new table |
+
+### Explicitly rejected
+
+- **Automatic reminders** (scheduled emails/push) — bigger trust surface
+  (frequency, tone, opt-out) than manual copy-and-paste; only worth
+  building once manual is proven wanted. Deferred, not built.
+- **Budgeting / spending categories / "where does my money go"** — a
+  different product (Lunch Money, Halfway). crdledger answers "who owes
+  who," not "what did I spend on."
+- **Bank connections / auto-import** — the entire value of this app is
+  money that *doesn't* move through a bank. Connecting one would blur
+  the exact thing that makes it useful.
+- **Social feed / activity feed / gamification streaks** — the category's
+  most-cited way a focused IOU tool gets worse trying to become bigger.
+- **Multi-currency** — no stated need yet; not building for a
+  hypothetical.
+- **A separate `/status` route** — see decision above; would have
+  duplicated the dashboard.
+
+### Build order (cheapest relative to how much it helps "who owes who")
+
+1. Debt netting (pure computation over existing data, zero schema change)
+2. CSV export (one query, stdlib only)
+3. Manual reminders (clipboard only, zero backend)
+4. Audit info surfacing (data already existed)
+5. Receipt photos (small schema change + reused upload infra)
+6. *(deferred)* Automatic reminders — only after manual usage justifies it

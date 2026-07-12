@@ -21,7 +21,7 @@ func NewTransactionService(transactions *repository.TransactionRepository, users
 	return &TransactionService{transactions: transactions, users: users}
 }
 
-func (s *TransactionService) Record(sellerID int64, buyerUsername string, amount float64, description string) (*models.Transaction, error) {
+func (s *TransactionService) Record(sellerID int64, buyerUsername string, amount float64, description, receiptPath string) (*models.Transaction, error) {
 	if amount <= 0 {
 		return nil, ErrInvalidAmount
 	}
@@ -47,6 +47,9 @@ func (s *TransactionService) Record(sellerID int64, buyerUsername string, amount
 		Amount:      amount,
 		Description: description,
 		Status:      "pending",
+	}
+	if receiptPath != "" {
+		t.PhotoPath = &receiptPath
 	}
 
 	if err := s.transactions.Create(t); err != nil {

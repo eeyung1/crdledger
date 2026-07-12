@@ -11,4 +11,5 @@ type Transaction struct {
 	Status      string
 	CreatedAt   time.Time
 	PaidAt      *time.Time
+	PhotoPath   *string // optional receipt/evidence photo, nil if none was attached
 }

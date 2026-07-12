@@ -5,36 +5,77 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="stylesheet" href="/static/css/style.css">
 	{{template "pwa_head" .}}
-	<title>Dashboard — crdledger</title>
+	<title>Dashboard</title>
 </head>
-<body class="dark">
+<body>
 {{template "sidebar" .}}
 	<div class="page-head">
-		<div class="avatar xl">
-			{{if .PhotoPath}}<img src="{{.PhotoPath}}" alt="">{{else}}{{template "logo"}}{{end}}
+		<div class="avatar lg">
+			{{if .PhotoPath}}<img src="{{.PhotoPath}}" alt="">{{else}}{{template "icon_profile"}}{{end}}
 		</div>
 		<div>
-			<p class="eyebrow">Welcome back</p>
-			<h1>{{.DisplayName}}</h1>
+			<p class="text-caption">Welcome back</p>
+			<h1 class="text-large-title">{{.DisplayName}}</h1>
 		</div>
 	</div>
 
 	{{if .PhotoError}}
-	<p class="error" role="alert">{{.PhotoError}}</p>
+	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.PhotoError}}</div>
 	{{end}}
 
-	<div class="balance-summary">
-		<a class="balance-card link-card glass receivable" href="/transactions/creditors">
-			<div class="label">{{template "icon_receivable"}} Total receivable</div>
-			<div class="value">{{.TotalReceivable}}</div>
+	{{if .LoadError}}
+	<div class="banner is-error" role="alert">
+		{{template "icon_alert"}}
+		<span>Couldn't load your balance right now. <a href="/dashboard">Retry</a></span>
+	</div>
+	{{else}}
+
+	<!-- The single number the eye should land on first: net position,
+	     signed, above everything else. Receivable/owed are proven
+	     secondary purely by size and position below. -->
+	<div class="net-position">
+		<p class="text-caption">Net position</p>
+		<div class="net-position-row">
+			<span class="net-position-amount {{if gt .NetPosition 0.0}}is-positive{{else if lt .NetPosition 0.0}}is-attention{{end}}">
+				{{if gt .NetPosition 0.0}}+{{end}}{{printf "%.2f" .NetPosition}}
+			</span>
+			{{template "sparkline" .Sparkline}}
+		</div>
+		<p class="net-position-caption">
+			{{if gt .NetPosition 0.0}}You're owed more than you owe{{else if lt .NetPosition 0.0}}You owe more than you're owed{{else}}You're all settled up{{end}}
+		</p>
+	</div>
+
+	<div class="balance-summary two-col">
+		<a class="balance-card surface receivable" href="/transactions/creditors">
+			<div class="label">{{template "icon_receivable"}} Owed to you</div>
+			<div class="amount-large">{{printf "%.2f" .TotalReceivable}}</div>
 		</a>
-		<a class="balance-card link-card glass owed" href="/transactions/debtors">
-			<div class="label">{{template "icon_owed"}} Total owed</div>
-			<div class="value">{{.TotalOwed}}</div>
+		<a class="balance-card surface owed" href="/transactions/debtors">
+			<div class="label">{{template "icon_owed"}} You owe</div>
+			<div class="amount-large">{{printf "%.2f" .TotalOwed}}</div>
 		</a>
 	</div>
 
-	<a href="/transactions/new" class="btn btn-primary only-desktop" style="max-width: 260px;">{{template "icon_record"}} Record a transaction</a>
+	{{if .IsEmpty}}
+	<p class="empty-hint">Record your first transaction to start the ledger.</p>
+	{{else}}
+		{{if .ShowCreditorChart}}
+		<div class="net-bar-section">
+			<h2 class="text-title-2">Who owes you the most</h2>
+			{{template "net_bar_list" .CreditorBarData}}
+		</div>
+		{{end}}
+		{{if .ShowDebtorChart}}
+		<div class="net-bar-section">
+			<h2 class="text-title-2">Who you owe the most</h2>
+			{{template "net_bar_list" .DebtorBarData}}
+		</div>
+		{{end}}
+	{{end}}
+	{{end}}
+
+	<a href="/transactions/new" class="btn btn-primary btn-max only-desktop">{{template "icon_record"}} Record a transaction</a>
 {{template "sidebar_end" .}}
 </body>
 </html>

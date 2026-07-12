@@ -23,6 +23,14 @@ func buildTxRows(views []service.TransactionView, csrfToken string) []TxRowData 
 	return rows
 }
 
+// NetBarChartData backs the "net_bar_list" partial — Variant picks which
+// semantic color role the bars use ("positive" or "attention"), so the
+// same markup renders both the "owed to you" and "you owe" charts.
+type NetBarChartData struct {
+	Rows    []service.CounterpartyNet
+	Variant string
+}
+
 // isHTMXRequest reports whether the request came from an htmx-driven
 // interaction (as opposed to a plain browser navigation / no-JS
 // fallback), so handlers can choose between returning a full page and a

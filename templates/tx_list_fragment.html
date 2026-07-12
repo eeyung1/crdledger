@@ -1,12 +1,18 @@
 {{define "tx_list_fragment"}}
-{{if .Rows}}
+{{if .LoadError}}
+<div class="banner is-error" role="alert">{{template "icon_alert"}} Couldn't load your transactions right now — <a href="{{.BasePath}}">Retry</a>.</div>
+{{else if .Rows}}
 <div class="tx-list">
 	{{range .Rows}}{{template "tx_row" .}}{{end}}
 </div>
 {{else}}
-<div class="empty-state glass">
+<div class="empty-state surface">
 	{{template "icon_empty"}}
-	<p>{{if .Query}}No transactions match "{{.Query}}".{{else}}Nothing here yet — record a transaction to start the ledger.{{end}}</p>
+	{{if .Query}}
+	<p>No transactions match "{{.Query}}".</p>
+	{{else}}
+	<p>{{.EmptyMessage}}</p>
+	{{end}}
 </div>
 {{end}}
 {{end}}

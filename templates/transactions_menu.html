@@ -5,23 +5,25 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="stylesheet" href="/static/css/style.css">
 	{{template "pwa_head" .}}
-	<title>Transactions — crdledger</title>
+	<title>Transactions</title>
 </head>
-<body class="dark">
+<body>
 {{template "sidebar" .}}
-	<p class="eyebrow">The ledger</p>
-	<h1 style="margin-bottom:22px;">Transactions</h1>
+	<p class="text-caption">The ledger</p>
+	<h1 class="text-title-1 page-title">Transactions</h1>
 
-	<div class="balance-summary" style="grid-template-columns: 1fr;">
-		<a href="/transactions/creditors" class="balance-card link-card glass receivable">
+	<div class="balance-summary">
+		<a href="/transactions/creditors" class="balance-card surface receivable">
 			<div class="label">{{template "icon_receivable"}} Creditors</div>
-			<div class="value" style="font-family: var(--font-body); font-size: 16px;">People who owe you money</div>
+			<div class="sub-value">People who owe you money</div>
 		</a>
-		<a href="/transactions/debtors" class="balance-card link-card glass owed">
+		<a href="/transactions/debtors" class="balance-card surface owed">
 			<div class="label">{{template "icon_owed"}} Debtors</div>
-			<div class="value" style="font-family: var(--font-body); font-size: 16px;">People you owe money</div>
+			<div class="sub-value">People you owe money</div>
 		</a>
 	</div>
+
+	<a href="/transactions/export.csv" class="btn btn-ghost btn-max">{{template "icon_receipt"}} Export as CSV</a>
 {{template "sidebar_end" .}}
 </body>
 </html>

@@ -7,20 +7,20 @@
 	{{template "pwa_head" .}}
 	<title>Edit profile — crdledger</title>
 </head>
-<body class="dark">
+<body>
 {{template "sidebar" .}}
-	<p class="eyebrow">Your account</p>
-	<h1 style="margin-bottom:22px;">Edit profile</h1>
+	<p class="text-caption">Your account</p>
+	<h1 class="text-title-1 page-title">Edit profile</h1>
 
-	<div class="avatar lg" style="margin-bottom:18px;">
-		{{if .PhotoPath}}<img src="{{.PhotoPath}}" alt="">{{else}}{{template "logo"}}{{end}}
+	<div class="avatar lg profile-avatar-block">
+		{{if .PhotoPath}}<img src="{{.PhotoPath}}" alt="">{{else}}{{template "icon_profile"}}{{end}}
 	</div>
 
 	{{if .PhotoError}}
-	<p class="error" role="alert">{{.PhotoError}}</p>
+	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.PhotoError}}</div>
 	{{end}}
 
-	<form method="POST" action="/photo/upload" enctype="multipart/form-data" class="stack glass card">
+	<form method="POST" action="/photo/upload" enctype="multipart/form-data" class="stack surface card">
 		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 		<label>
 			{{if .PhotoPath}}Change{{else}}Add{{end}} profile photo

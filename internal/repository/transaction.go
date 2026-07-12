@@ -20,8 +20,8 @@ func NewTransactionRepository(db *sql.DB) *TransactionRepository {
 
 func (r *TransactionRepository) Create(t *models.Transaction) error {
 	result, err := r.db.Exec(
-		`INSERT INTO transactions (seller_id, buyer_id, amount, description, status) VALUES (?, ?, ?, ?, ?)`,
-		t.SellerID, t.BuyerID, t.Amount, t.Description, t.Status,
+		`INSERT INTO transactions (seller_id, buyer_id, amount, description, status, photo_path) VALUES (?, ?, ?, ?, ?, ?)`,
+		t.SellerID, t.BuyerID, t.Amount, t.Description, t.Status, t.PhotoPath,
 	)
 	if err != nil {
 		return err
@@ -38,11 +38,11 @@ func (r *TransactionRepository) Create(t *models.Transaction) error {
 func (r *TransactionRepository) GetByID(id int64) (*models.Transaction, error) {
 	var t models.Transaction
 	row := r.db.QueryRow(
-		`SELECT id, seller_id, buyer_id, amount, description, status, created_at, paid_at FROM transactions WHERE id = ?`,
+		`SELECT id, seller_id, buyer_id, amount, description, status, created_at, paid_at, photo_path FROM transactions WHERE id = ?`,
 		id,
 	)
 
-	err := row.Scan(&t.ID, &t.SellerID, &t.BuyerID, &t.Amount, &t.Description, &t.Status, &t.CreatedAt, &t.PaidAt)
+	err := row.Scan(&t.ID, &t.SellerID, &t.BuyerID, &t.Amount, &t.Description, &t.Status, &t.CreatedAt, &t.PaidAt, &t.PhotoPath)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrTransactionNotFound
@@ -54,7 +54,7 @@ func (r *TransactionRepository) GetByID(id int64) (*models.Transaction, error) {
 
 func (r *TransactionRepository) GetByUser(userID int64) ([]models.Transaction, error) {
 	rows, err := r.db.Query(
-		`SELECT id, seller_id, buyer_id, amount, description, status, created_at, paid_at
+		`SELECT id, seller_id, buyer_id, amount, description, status, created_at, paid_at, photo_path
 		 FROM transactions
 		 WHERE seller_id = ? OR buyer_id = ?
 		 ORDER BY created_at DESC`,
@@ -68,7 +68,7 @@ func (r *TransactionRepository) GetByUser(userID int64) ([]models.Transaction, e
 	var transactions []models.Transaction
 	for rows.Next() {
 		var t models.Transaction
-		if err := rows.Scan(&t.ID, &t.SellerID, &t.BuyerID, &t.Amount, &t.Description, &t.Status, &t.CreatedAt, &t.PaidAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.SellerID, &t.BuyerID, &t.Amount, &t.Description, &t.Status, &t.CreatedAt, &t.PaidAt, &t.PhotoPath); err != nil {
 			return nil, err
 		}
 		transactions = append(transactions, t)

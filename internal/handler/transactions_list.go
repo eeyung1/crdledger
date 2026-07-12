@@ -17,16 +17,34 @@ func NewTransactionsListHandler(balances *service.BalanceService, templates *tem
 	return &TransactionsListHandler{balances: balances, templates: templates}
 }
 
-func (h *TransactionsListHandler) render(w http.ResponseWriter, r *http.Request, isSeller bool, title string) {
+// searchThreshold matches the state-inventory rule: search only appears
+// once there's enough in the list to need it — on a short list it's
+// clutter, not a tool.
+const searchThreshold = 5
+
+func (h *TransactionsListHandler) render(w http.ResponseWriter, r *http.Request, isSeller bool, title, emptyMessage string) {
 	userID, ok := middleware.UserIDFromContext(r)
 	if !ok {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
+	csrfToken := middleware.CSRFTokenFromContext(r)
+	basePath := r.URL.Path
+
 	balance, err := h.balances.GetBalance(userID)
 	if err != nil {
-		http.Error(w, "failed to load balance", http.StatusInternalServerError)
+		data := map[string]any{
+			"Title":     title,
+			"BasePath":  basePath,
+			"LoadError": true,
+			"CSRFToken": csrfToken,
+		}
+		if isHTMXRequest(r) {
+			h.templates.ExecuteTemplate(w, "tx_list_fragment", data)
+			return
+		}
+		h.templates.ExecuteTemplate(w, "transactions_list.html", data)
 		return
 	}
 
@@ -35,13 +53,14 @@ func (h *TransactionsListHandler) render(w http.ResponseWriter, r *http.Request,
 	query := r.URL.Query().Get("q")
 	transactions := service.FilterTransactions(roleFiltered, query)
 
-	csrfToken := middleware.CSRFTokenFromContext(r)
 	data := map[string]any{
-		"Title":     title,
-		"BasePath":  r.URL.Path,
-		"Rows":      buildTxRows(transactions, csrfToken),
-		"Query":     query,
-		"CSRFToken": csrfToken,
+		"Title":        title,
+		"BasePath":     basePath,
+		"Rows":         buildTxRows(transactions, csrfToken),
+		"Query":        query,
+		"CSRFToken":    csrfToken,
+		"ShowSearch":   len(roleFiltered) > searchThreshold,
+		"EmptyMessage": emptyMessage,
 	}
 
 	// HTMX-driven search only needs the list fragment re-rendered, not the
@@ -56,9 +75,9 @@ func (h *TransactionsListHandler) render(w http.ResponseWriter, r *http.Request,
 }
 
 func (h *TransactionsListHandler) Creditors(w http.ResponseWriter, r *http.Request) {
-	h.render(w, r, true, "Creditors (you're owed money)")
+	h.render(w, r, true, "Creditors", "You're not owed anything right now.")
 }
 
 func (h *TransactionsListHandler) Debtors(w http.ResponseWriter, r *http.Request) {
-	h.render(w, r, false, "Debtors (you owe money)")
+	h.render(w, r, false, "Debtors", "You don't owe anyone right now.")
 }

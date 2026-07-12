@@ -1,0 +1,26 @@
+{{define "net_bar_list"}}
+<div class="net-bar-list">
+	{{range .Rows}}
+	<div class="net-bar-row">
+		<div class="net-bar-row-label">
+			<span class="name">{{.Name}}</span>
+			<span class="amount-body">{{printf "%.2f" .Amount}}</span>
+		</div>
+		<svg class="net-bar" viewBox="0 0 100 8" preserveAspectRatio="none" role="img" aria-label="{{.Name}}: {{printf "%.2f" .Amount}}">
+			<rect class="track" x="0" y="0" width="100" height="8" rx="4"></rect>
+			<rect class="value is-{{$.Variant}}" x="0" y="0" width="{{.BarWidthPct}}" height="8" rx="4"></rect>
+		</svg>
+	</div>
+	{{end}}
+</div>
+{{end}}
+
+{{define "sparkline"}}
+{{if .Points}}
+<svg class="sparkline {{if .TrendFlat}}is-flat{{else if .TrendUp}}is-positive{{else}}is-attention{{end}}"
+	viewBox="0 0 100 30" preserveAspectRatio="none" role="img"
+	aria-label="Net position trend over the last 8 weeks: {{if .TrendFlat}}flat{{else if .TrendUp}}trending up{{else}}trending down{{end}}">
+	<polyline points="{{.Points}}"></polyline>
+</svg>
+{{end}}
+{{end}}

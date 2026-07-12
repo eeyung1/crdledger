@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -65,11 +66,12 @@ func main() {
 
 	authHandler := handler.NewAuthHandler(authService, sessions, templates)
 	dashboardHandler := handler.NewDashboardHandler(userRepo, balanceService, templates)
-	transactionHandler := handler.NewTransactionHandler(transactionService, balanceService, templates)
+	transactionHandler := handler.NewTransactionHandler(transactionService, balanceService, photoService, templates)
 	transactionsMenuHandler := handler.NewTransactionsMenuHandler(templates)
 	transactionsListHandler := handler.NewTransactionsListHandler(balanceService, templates)
 	photoHandler := handler.NewPhotoHandler(photoService, templates)
 	profileHandler := handler.NewProfileHandler(userRepo, templates)
+	exportHandler := handler.NewExportHandler(balanceService)
 
 	csrf := middleware.CSRF(cfg.SecureCookies)
 	authLimiter := middleware.NewRateLimiter(10, time.Minute)
@@ -116,6 +118,7 @@ func main() {
 	mux.HandleFunc("/transactions/mark-paid", csrf(sessions.RequireAuth(transactionHandler.MarkPaid)))
 	mux.HandleFunc("/profile/edit", csrf(sessions.RequireAuth(profileHandler.EditProfilePage)))
 	mux.HandleFunc("/photo/upload", csrf(sessions.RequireAuth(photoHandler.Upload)))
+	mux.HandleFunc("/transactions/export.csv", csrf(sessions.RequireAuth(exportHandler.TransactionsCSV)))
 
 	var root http.Handler = mux
 	root = middleware.SecurityHeaders(root)
@@ -173,7 +176,8 @@ func createTables(db *sql.DB) error {
 		description TEXT NOT NULL,
 		status TEXT NOT NULL DEFAULT 'pending',
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		paid_at DATETIME
+		paid_at DATETIME,
+		photo_path TEXT
 	);`
 
 	indexes := []string{
@@ -187,6 +191,16 @@ func createTables(db *sql.DB) error {
 	if _, err := db.Exec(transactionsTable); err != nil {
 		return err
 	}
+
+	// Defensive migration for databases created before receipts existed.
+	// SQLite has no "ADD COLUMN IF NOT EXISTS", so we attempt it and
+	// ignore the specific "duplicate column" failure.
+	if _, err := db.Exec(`ALTER TABLE transactions ADD COLUMN photo_path TEXT`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") {
+			return err
+		}
+	}
+
 	for _, idx := range indexes {
 		if _, err := db.Exec(idx); err != nil {
 			return err

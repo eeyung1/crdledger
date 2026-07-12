@@ -1,5 +1,8 @@
 // crdledger — small progressive-enhancement layer. No framework, no
-// build step: everything here degrades gracefully if JS fails to load.
+// build step: everything here degrades gracefully if JS fails to load,
+// and nothing here touches element.style directly (the CSP has no
+// 'unsafe-inline' for style-src, so all visual state changes go through
+// CSS classes instead).
 (function () {
 	'use strict';
 
@@ -22,18 +25,18 @@
 		if (isActive) el.classList.add('active');
 	});
 
-	// ---- lightweight toast for query-string feedback (?recorded=1 etc.) ----
+	// ---- lightweight toast for confirmations ----
 	var toastStack = document.getElementById('toast-stack');
 	function toast(message) {
 		if (!toastStack) return;
 		var el = document.createElement('div');
-		el.className = 'toast glass';
+		el.className = 'toast';
+		el.setAttribute('role', 'status');
 		el.textContent = message;
 		toastStack.appendChild(el);
 		setTimeout(function () {
-			el.style.transition = 'opacity 0.25s ease';
-			el.style.opacity = '0';
-			setTimeout(function () { el.remove(); }, 250);
+			el.classList.add('is-leaving');
+			setTimeout(function () { el.remove(); }, 200);
 		}, 2600);
 	}
 
@@ -44,6 +47,22 @@
 		var clean = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
 		window.history.replaceState({}, '', clean);
 	}
+
+	// ---- copy-reminder (manual nudge, no messaging infra) ----
+	// "Copy reminder" buttons carry the pre-written text in a data
+	// attribute; clicking copies it to the clipboard so the person can
+	// paste it into whatever chat app they already use with that friend.
+	document.addEventListener('click', function (e) {
+		var btn = e.target.closest && e.target.closest('[data-copy-reminder]');
+		if (!btn) return;
+		var text = btn.getAttribute('data-copy-reminder');
+		if (!text || !navigator.clipboard) return;
+		navigator.clipboard.writeText(text).then(function () {
+			toast('Reminder copied — paste it in your chat with them.');
+		}).catch(function () {
+			toast("Couldn't copy — your browser may not allow it here.");
+		});
+	});
 
 	// ---- install prompt (Android/desktop Chrome) ----
 	var deferredPrompt = null;

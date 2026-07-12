@@ -3,22 +3,23 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-	<meta name="theme-color" content="#0a0e18">
+	<meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">
+	<meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
 	<link rel="stylesheet" href="/static/css/style.css">
-	<title>You're offline — crdledger</title>
+	<title>You're offline</title>
 </head>
-<body class="dark">
+<body>
 	<div class="auth-page">
 		<div class="auth-header">
-			<svg class="seal" width="56" height="56" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
-				<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f0cf8f"/><stop offset="100%" stop-color="#b3813a"/></linearGradient></defs>
-				<circle cx="28" cy="28" r="26" fill="url(#g)"/>
-				<path d="M18 28h20M28 18v20" stroke="#241a06" stroke-width="3.4" stroke-linecap="round"/>
+			<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="crdledger">
+				<circle cx="20" cy="20" r="19" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+				<path d="M12 20h16M20 12v16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
 			</svg>
-			<h1>You're offline</h1>
-			<p>crdledger needs a connection to load your ledger. Anything already cached will still work.</p>
+			<h1 class="text-title-1">You're offline</h1>
+			<p>crdledger needs a connection to load your ledger balances are never cached, so we don't show stale numbers. Anything else already visited will still work.</p>
 		</div>
-		<button class="btn-primary" style="max-width:220px;" onclick="location.reload()">Try again</button>
+		<button id="offline-retry" class="btn-primary btn-max">Try again</button>
 	</div>
+	<script src="/static/js/offline.js" defer></script>
 </body>
 </html>

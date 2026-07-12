@@ -1,14 +1,25 @@
 {{define "tx_row"}}
-<div class="tx-row glass" id="tx-{{.Tx.ID}}">
+<div class="tx-row surface" id="tx-{{.Tx.ID}}">
 	<div class="tx-avatar">{{slice .Tx.CounterpartName 0 1}}</div>
 	<div class="tx-main">
 		<div class="tx-name">{{.Tx.CounterpartName}}</div>
 		<div class="tx-desc">{{.Tx.Description}}</div>
-		<span class="status-pill {{.Tx.Status}}">{{.Tx.Status}}{{if .Tx.PaidAt}} · {{.Tx.PaidAt.Format "Jan 2, 2006"}}{{end}}</span>
+		<div class="tx-meta-row">
+			<span class="status-pill {{.Tx.Status}}">
+				{{if eq .Tx.Status "paid"}}{{template "icon_check"}}{{end}}
+				{{.Tx.Status}}{{if .Tx.PaidAt}} · {{.Tx.PaidAt.Format "Jan 2, 2006"}}{{end}}
+			</span>
+			{{if eq .Tx.Status "pending"}}
+			<span class="text-footnote">{{if eq .Tx.DaysPending 0}}today{{else if eq .Tx.DaysPending 1}}1 day pending{{else}}{{.Tx.DaysPending}} days pending{{end}}</span>
+			{{end}}
+			{{if .Tx.PhotoPath}}
+			<a href="{{.Tx.PhotoPath}}" target="_blank" rel="noopener" class="tx-receipt-link">{{template "icon_receipt"}} Receipt</a>
+			{{end}}
+		</div>
 		{{if .Error}}<div class="tx-error">{{.Error}}</div>{{end}}
 	</div>
-	<div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
-		<div class="tx-amount">{{.Tx.Amount}}</div>
+	<div class="tx-end">
+		<div class="amount-body">{{printf "%.2f" .Tx.Amount}}</div>
 		{{if and .Tx.IsSeller (eq .Tx.Status "pending")}}
 		<form method="POST" action="/transactions/mark-paid" class="tx-actions"
 			hx-post="/transactions/mark-paid" hx-target="closest .tx-row" hx-swap="outerHTML"
@@ -17,10 +28,15 @@
 			<input type="hidden" name="transaction_id" value="{{.Tx.ID}}">
 			<input type="date" name="paid_date" required>
 			<button type="submit" class="btn btn-primary btn-sm">
-				<span id="paid-spinner-{{.Tx.ID}}" class="htmx-indicator spinner"></span>
+				<span id="paid-spinner-{{.Tx.ID}}" class="htmx-indicator spinner" aria-hidden="true"></span>
 				Mark paid
 			</button>
 		</form>
+		{{end}}
+		{{if .Tx.ReminderText}}
+		<button type="button" class="btn btn-ghost btn-sm" data-copy-reminder="{{.Tx.ReminderText}}">
+			{{template "icon_bell"}} Copy reminder
+		</button>
 		{{end}}
 	</div>
 </div>

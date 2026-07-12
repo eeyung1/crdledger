@@ -1,13 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" role="img" aria-label="crdledger seal">
-	<defs>
-		<linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-			<stop offset="0%" stop-color="#f0cf8f"/>
-			<stop offset="100%" stop-color="#b3813a"/>
-		</linearGradient>
-	</defs>
-	<rect width="56" height="56" rx="14" fill="#0a0e18"/>
-	<circle cx="28" cy="28" r="21" fill="url(#g)"/>
-	<circle cx="28" cy="28" r="21" fill="none" stroke="#241a06" stroke-opacity="0.15" stroke-width="1.2"/>
-	<circle cx="28" cy="28" r="16.5" fill="none" stroke="#241a06" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="1.2 2.8"/>
-	<path d="M20 29 L25.5 34.5 L37 21.5" fill="none" stroke="#241a06" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" role="img" aria-label="crdledger">
+	<rect width="56" height="56" rx="14" fill="#0B1220"/>
+	<circle cx="28" cy="28" r="19" fill="none" stroke="#F59E0B" stroke-width="2" opacity="0.4"/>
+	<path d="M18 29 L24 35 L38 20" fill="none" stroke="#F59E0B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

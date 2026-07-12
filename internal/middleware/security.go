@@ -7,13 +7,13 @@ import (
 )
 
 // SecurityHeaders sets a conservative set of response headers appropriate
-// for a server-rendered app with no third-party embeds. The CSP allows the
-// Google Fonts CDN (used for the display/body/mono typefaces) and nothing
-// else external.
+// for a server-rendered app with no third-party embeds. No inline styles,
+// no inline scripts, no external font/style CDN — everything is
+// same-origin, per the CSP hard constraint.
 func SecurityHeaders(next http.Handler) http.Handler {
 	const csp = "default-src 'self'; " +
-		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-		"font-src 'self' https://fonts.gstatic.com; " +
+		"style-src 'self'; " +
+		"font-src 'self'; " +
 		"img-src 'self' data: blob:; " +
 		"script-src 'self'; " +
 		"connect-src 'self'; " +
