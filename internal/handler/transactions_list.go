@@ -10,11 +10,12 @@ import (
 
 type TransactionsListHandler struct {
 	balances  *service.BalanceService
+	admin     *AdminChecker
 	templates *template.Template
 }
 
-func NewTransactionsListHandler(balances *service.BalanceService, templates *template.Template) *TransactionsListHandler {
-	return &TransactionsListHandler{balances: balances, templates: templates}
+func NewTransactionsListHandler(balances *service.BalanceService, admin *AdminChecker, templates *template.Template) *TransactionsListHandler {
+	return &TransactionsListHandler{balances: balances, admin: admin, templates: templates}
 }
 
 // searchThreshold matches the state-inventory rule: search only appears
@@ -39,6 +40,7 @@ func (h *TransactionsListHandler) render(w http.ResponseWriter, r *http.Request,
 			"BasePath":  basePath,
 			"LoadError": true,
 			"CSRFToken": csrfToken,
+			"IsAdmin":   h.admin.IsAdmin(r),
 		}
 		if isHTMXRequest(r) {
 			h.templates.ExecuteTemplate(w, "tx_list_fragment", data)
@@ -60,6 +62,7 @@ func (h *TransactionsListHandler) render(w http.ResponseWriter, r *http.Request,
 		"Query":        query,
 		"CSRFToken":    csrfToken,
 		"ShowSearch":   len(roleFiltered) > searchThreshold,
+		"IsAdmin":      h.admin.IsAdmin(r),
 		"EmptyMessage": emptyMessage,
 	}
 

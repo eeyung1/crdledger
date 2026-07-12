@@ -8,11 +8,12 @@ import (
 )
 
 type TransactionsMenuHandler struct {
+	admin     *AdminChecker
 	templates *template.Template
 }
 
-func NewTransactionsMenuHandler(templates *template.Template) *TransactionsMenuHandler {
-	return &TransactionsMenuHandler{templates: templates}
+func NewTransactionsMenuHandler(admin *AdminChecker, templates *template.Template) *TransactionsMenuHandler {
+	return &TransactionsMenuHandler{admin: admin, templates: templates}
 }
 
 func (h *TransactionsMenuHandler) Menu(w http.ResponseWriter, r *http.Request) {
@@ -23,5 +24,6 @@ func (h *TransactionsMenuHandler) Menu(w http.ResponseWriter, r *http.Request) {
 
 	h.templates.ExecuteTemplate(w, "transactions_menu.html", map[string]any{
 		"CSRFToken": middleware.CSRFTokenFromContext(r),
+		"IsAdmin":   h.admin.IsAdmin(r),
 	})
 }

@@ -64,14 +64,17 @@ func main() {
 	sessions := middleware.NewSessionStore()
 	sessions.SecureCookies = cfg.SecureCookies
 
+	adminChecker := handler.NewAdminChecker(userRepo, cfg.AdminUsernames)
+
 	authHandler := handler.NewAuthHandler(authService, sessions, templates)
-	dashboardHandler := handler.NewDashboardHandler(userRepo, balanceService, templates)
-	transactionHandler := handler.NewTransactionHandler(transactionService, balanceService, photoService, templates)
-	transactionsMenuHandler := handler.NewTransactionsMenuHandler(templates)
-	transactionsListHandler := handler.NewTransactionsListHandler(balanceService, templates)
+	dashboardHandler := handler.NewDashboardHandler(userRepo, balanceService, adminChecker, templates)
+	transactionHandler := handler.NewTransactionHandler(transactionService, balanceService, photoService, adminChecker, templates)
+	transactionsMenuHandler := handler.NewTransactionsMenuHandler(adminChecker, templates)
+	transactionsListHandler := handler.NewTransactionsListHandler(balanceService, adminChecker, templates)
 	photoHandler := handler.NewPhotoHandler(photoService, templates)
-	profileHandler := handler.NewProfileHandler(userRepo, templates)
+	profileHandler := handler.NewProfileHandler(userRepo, adminChecker, templates)
 	exportHandler := handler.NewExportHandler(balanceService)
+	adminHandler := handler.NewAdminHandler(authService, adminChecker, templates)
 
 	csrf := middleware.CSRF(cfg.SecureCookies)
 	authLimiter := middleware.NewRateLimiter(10, time.Minute)
@@ -119,6 +122,7 @@ func main() {
 	mux.HandleFunc("/profile/edit", csrf(sessions.RequireAuth(profileHandler.EditProfilePage)))
 	mux.HandleFunc("/photo/upload", csrf(sessions.RequireAuth(photoHandler.Upload)))
 	mux.HandleFunc("/transactions/export.csv", csrf(sessions.RequireAuth(exportHandler.TransactionsCSV)))
+	mux.HandleFunc("/admin/reset-password", csrf(sessions.RequireAuth(adminHandler.ResetPasswordPage)))
 
 	var root http.Handler = mux
 	root = middleware.SecurityHeaders(root)

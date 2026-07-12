@@ -12,11 +12,12 @@ import (
 type DashboardHandler struct {
 	users     *repository.UserRepository
 	balances  *service.BalanceService
+	admin     *AdminChecker
 	templates *template.Template
 }
 
-func NewDashboardHandler(users *repository.UserRepository, balances *service.BalanceService, templates *template.Template) *DashboardHandler {
-	return &DashboardHandler{users: users, balances: balances, templates: templates}
+func NewDashboardHandler(users *repository.UserRepository, balances *service.BalanceService, admin *AdminChecker, templates *template.Template) *DashboardHandler {
+	return &DashboardHandler{users: users, balances: balances, admin: admin, templates: templates}
 }
 
 func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
@@ -37,6 +38,7 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		"PhotoPath":   user.PhotoPath,
 		"PhotoError":  r.URL.Query().Get("photo_error"),
 		"CSRFToken":   middleware.CSRFTokenFromContext(r),
+		"IsAdmin":     h.admin.IsAdmin(r),
 	}
 
 	// The dashboard totals are the single most trust-sensitive numbers in

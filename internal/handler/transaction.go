@@ -14,11 +14,12 @@ type TransactionHandler struct {
 	transactions *service.TransactionService
 	balances     *service.BalanceService
 	photos       *service.PhotoService
+	admin        *AdminChecker
 	templates    *template.Template
 }
 
-func NewTransactionHandler(transactions *service.TransactionService, balances *service.BalanceService, photos *service.PhotoService, templates *template.Template) *TransactionHandler {
-	return &TransactionHandler{transactions: transactions, balances: balances, photos: photos, templates: templates}
+func NewTransactionHandler(transactions *service.TransactionService, balances *service.BalanceService, photos *service.PhotoService, admin *AdminChecker, templates *template.Template) *TransactionHandler {
+	return &TransactionHandler{transactions: transactions, balances: balances, photos: photos, admin: admin, templates: templates}
 }
 
 // RecordFormData backs the "record_form" partial — the form fields are
@@ -33,12 +34,14 @@ type RecordFormData struct {
 	BuyerUsername string
 	Amount        string
 	Description   string
+	IsAdmin       bool
 }
 
 func (h *TransactionHandler) RecordPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		h.templates.ExecuteTemplate(w, "record.html", RecordFormData{
 			CSRFToken: middleware.CSRFTokenFromContext(r),
+			IsAdmin:   h.admin.IsAdmin(r),
 		})
 		return
 	}
@@ -66,6 +69,7 @@ func (h *TransactionHandler) RecordPage(w http.ResponseWriter, r *http.Request) 
 			BuyerUsername: buyerUsername,
 			Amount:        amountStr,
 			Description:   description,
+			IsAdmin:       h.admin.IsAdmin(r),
 		}
 		if isHTMXRequest(r) {
 			h.templates.ExecuteTemplate(w, "record_form", data)

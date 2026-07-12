@@ -10,11 +10,12 @@ import (
 
 type ProfileHandler struct {
 	users     *repository.UserRepository
+	admin     *AdminChecker
 	templates *template.Template
 }
 
-func NewProfileHandler(users *repository.UserRepository, templates *template.Template) *ProfileHandler {
-	return &ProfileHandler{users: users, templates: templates}
+func NewProfileHandler(users *repository.UserRepository, admin *AdminChecker, templates *template.Template) *ProfileHandler {
+	return &ProfileHandler{users: users, admin: admin, templates: templates}
 }
 
 func (h *ProfileHandler) EditProfilePage(w http.ResponseWriter, r *http.Request) {
@@ -34,5 +35,6 @@ func (h *ProfileHandler) EditProfilePage(w http.ResponseWriter, r *http.Request)
 		"PhotoPath":  user.PhotoPath,
 		"PhotoError": r.URL.Query().Get("photo_error"),
 		"CSRFToken":  middleware.CSRFTokenFromContext(r),
+		"IsAdmin":    h.admin.IsAdmin(r),
 	})
 }

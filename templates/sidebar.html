@@ -9,6 +9,9 @@
 		<a class="nav-link" data-nav="/profile/edit" href="/profile/edit">{{template "icon_profile"}} Edit profile</a>
 		<a class="nav-link" data-nav="/transactions/new" href="/transactions/new">{{template "icon_record"}} Record a transaction</a>
 		<a class="nav-link" data-nav="/transactions" href="/transactions">{{template "icon_list"}} Transactions</a>
+		{{if .IsAdmin}}
+		<a class="nav-link" data-nav="/admin/reset-password" href="/admin/reset-password">{{template "icon_admin"}} Reset a password</a>
+		{{end}}
 		<div class="sidebar-spacer"></div>
 		<form method="POST" action="/logout" class="form-reset">
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
