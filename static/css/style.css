@@ -165,7 +165,7 @@ svg { display: block; flex-shrink: 0; }
 
 /* ============================= app shell ============================= */
 
-.app-shell { min-height: 100vh; min-height: 100dvh; display: flex; }
+.app-shell { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 
 .app-main {
 	flex: 1;
@@ -612,12 +612,13 @@ button:disabled, .btn:disabled { opacity: 0.6; cursor: default; transform: none;
 
 /* ============================= responsive: desktop vs mobile ============================= */
 
-.only-mobile { display: block; }
 .only-desktop { display: none; }
 
 @media (min-width: 900px) {
 	.only-mobile { display: none !important; }
 	.only-desktop { display: flex !important; }
+
+	.app-shell { flex-direction: row; }
 
 	.sidebar { display: flex; }
 	.app-main { padding: var(--space-7) var(--space-6); max-width: 640px; }
