@@ -1,0 +1,9 @@
+.env
+*.backup*
+crdledger
+crdledger.db
+crdledger.db-wal
+crdledger.db-shm
+*.db
+static/uploads/*
+!static/uploads/.gitkeep
