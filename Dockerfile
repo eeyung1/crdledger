@@ -2,10 +2,6 @@
 FROM golang:1.26-bookworm AS build
 WORKDIR /src
 
-# go-sqlite3 uses cgo
-ENV CGO_ENABLED=1
-RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev && rm -rf /var/lib/apt/lists/*
-
 COPY go.mod go.sum ./
 RUN go mod download
 
@@ -23,11 +19,10 @@ COPY --from=build /out/crdledger ./crdledger
 COPY templates ./templates
 COPY static ./static
 
-RUN mkdir -p /app/data /app/static/uploads && chown -R appuser:appuser /app
+RUN mkdir -p /app/static/uploads && chown -R appuser:appuser /app
 USER appuser
 
 ENV PORT=8080
-ENV DB_PATH=/app/data/crdledger.db
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:8080/healthz || exit 1

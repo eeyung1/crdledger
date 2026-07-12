@@ -10,7 +10,8 @@ import (
 // an empty value if .env hasn't loaded yet.
 type Config struct {
 	Port           string
-	DBPath         string
+	TursoURL       string
+	TursoAuthToken string
 	SessionSecret  string
 	SecureCookies  bool // true when the app is served over HTTPS
 	Environment    string
@@ -23,9 +24,20 @@ func Load() (Config, error) {
 		return Config{}, errMissingSecret
 	}
 
+	tursoURL, ok := os.LookupEnv("TURSO_DATABASE_URL")
+	if !ok || tursoURL == "" {
+		return Config{}, errMissingTursoURL
+	}
+
+	tursoToken, ok := os.LookupEnv("TURSO_AUTH_TOKEN")
+	if !ok || tursoToken == "" {
+		return Config{}, errMissingTursoToken
+	}
+
 	cfg := Config{
 		Port:           getEnv("PORT", "8080"),
-		DBPath:         getEnv("DB_PATH", "./crdledger.db"),
+		TursoURL:       tursoURL,
+		TursoAuthToken: tursoToken,
 		SessionSecret:  secret,
 		SecureCookies:  getEnv("SECURE_COOKIES", "false") == "true",
 		Environment:    getEnv("ENVIRONMENT", "development"),
@@ -42,6 +54,8 @@ func getEnv(key, fallback string) string {
 }
 
 var errMissingSecret = configError("SESSION_SECRET environment variable is required but not set")
+var errMissingTursoURL = configError("TURSO_DATABASE_URL environment variable is required but not set")
+var errMissingTursoToken = configError("TURSO_AUTH_TOKEN environment variable is required but not set")
 
 type configError string
 

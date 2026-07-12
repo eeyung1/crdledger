@@ -8,6 +8,7 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -20,7 +21,7 @@ import (
 	"crdledger/internal/repository"
 	"crdledger/internal/service"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
 func main() {
@@ -32,7 +33,8 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	db, err := sql.Open("sqlite3", cfg.DBPath+"?_journal_mode=WAL&_foreign_keys=on")
+	dsn := cfg.TursoURL + "?authToken=" + url.QueryEscape(cfg.TursoAuthToken)
+	db, err := sql.Open("libsql", dsn)
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
 	}
@@ -42,11 +44,15 @@ func main() {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
+	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
+		log.Fatalf("failed to enable foreign keys: %v", err)
+	}
+
 	if err := createTables(db); err != nil {
 		log.Fatalf("failed to create tables: %v", err)
 	}
 
-	slog.Info("database ready", "path", cfg.DBPath)
+	slog.Info("database ready", "url", cfg.TursoURL)
 
 	templates, err := template.ParseGlob("templates/*.html")
 	if err != nil {
