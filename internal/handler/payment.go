@@ -62,10 +62,10 @@ func (h *TransactionHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, back, http.StatusSeeOther)
 }
 
-// renderRowFragment re-renders a single tx_row after a mark-paid attempt,
-// whether it succeeded or not, so HTMX can swap it in place without a
-// full page reload. On failure the row still reflects its real (unchanged)
-// state, with an inline error message.
+// renderRowFragment re-renders a single tx_row after a mark-paid, confirm,
+// or reject attempt, whether it succeeded or not, so HTMX can swap it in
+// place without a full page reload. On failure the row still reflects its
+// real (unchanged) state, with an inline error message.
 func (h *TransactionHandler) renderRowFragment(w http.ResponseWriter, r *http.Request, transactionID, userID int64, markErr error) {
 	view, err := h.balances.GetTransactionView(transactionID, userID)
 	if err != nil {
@@ -88,6 +88,12 @@ func (h *TransactionHandler) renderRowFragment(w http.ResponseWriter, r *http.Re
 			errMsg = "Enter an amount greater than zero."
 		case errors.Is(markErr, service.ErrPaymentExceedsBalance):
 			errMsg = "That's more than the remaining balance."
+		case errors.Is(markErr, service.ErrNotConfirmed):
+			errMsg = "The buyer needs to confirm this transaction before it can be marked paid."
+		case errors.Is(markErr, service.ErrNotBuyer):
+			errMsg = "Only the buyer can confirm or reject this transaction."
+		case errors.Is(markErr, service.ErrAlreadyResponded):
+			errMsg = "This transaction has already been confirmed or rejected."
 		default:
 			errMsg = "Something went wrong — please try again."
 		}
@@ -114,6 +120,8 @@ func httpErrorForMarkPaid(w http.ResponseWriter, err error) {
 		http.Error(w, "payment amount must be positive", http.StatusBadRequest)
 	case errors.Is(err, service.ErrPaymentExceedsBalance):
 		http.Error(w, "payment amount is more than the remaining balance", http.StatusBadRequest)
+	case errors.Is(err, service.ErrNotConfirmed):
+		http.Error(w, "the buyer must confirm this transaction before it can be marked as paid", http.StatusBadRequest)
 	default:
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 	}

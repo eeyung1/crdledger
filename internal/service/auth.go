@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"strings"
 
 	"crdledger/internal/models"
 	"crdledger/internal/repository"
@@ -11,6 +12,7 @@ import (
 
 var ErrUsernameTaken = errors.New("username already taken")
 var ErrInvalidInput = errors.New("username, password, and display name are required")
+var ErrInvalidDisplayName = errors.New("display name is required")
 
 type AuthService struct {
 	users *repository.UserRepository
@@ -49,4 +51,16 @@ func (s *AuthService) Register(username, password, displayName string) (*models.
 	}
 
 	return user, nil
+}
+
+// UpdateDisplayName changes how a user shows up to others across the app
+// (transaction rows, dashboard greeting, etc). It's purely cosmetic — no
+// uniqueness constraint like username — so the only rule is that it can't
+// be blank.
+func (s *AuthService) UpdateDisplayName(userID int64, displayName string) error {
+	displayName = strings.TrimSpace(displayName)
+	if displayName == "" {
+		return ErrInvalidDisplayName
+	}
+	return s.users.UpdateDisplayName(userID, displayName)
 }

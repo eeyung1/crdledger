@@ -30,6 +30,15 @@
 	</div>
 	{{else}}
 
+	{{if .HasNeedsResponse}}
+	<div class="net-bar-section">
+		<h2 class="text-title-2">Needs your response</h2>
+		{{range .NeedsResponse}}
+			{{template "tx_row" .}}
+		{{end}}
+	</div>
+	{{end}}
+
 	<!-- The single number the eye should land on first: net position,
 	     signed, above everything else. Receivable/owed are proven
 	     secondary purely by size and position below. -->

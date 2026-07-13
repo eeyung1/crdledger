@@ -62,6 +62,8 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		// above already say everything the bar would.
 		data["ShowCreditorChart"] = len(balance.TopCreditors) > 1
 		data["ShowDebtorChart"] = len(balance.TopDebtors) > 1
+		data["NeedsResponse"] = buildTxRows(balance.NeedsResponse, middleware.CSRFTokenFromContext(r))
+		data["HasNeedsResponse"] = len(balance.NeedsResponse) > 0
 	}
 
 	h.templates.ExecuteTemplate(w, "dashboard.html", data)

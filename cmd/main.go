@@ -78,7 +78,7 @@ func main() {
 	transactionsMenuHandler := handler.NewTransactionsMenuHandler(adminChecker, templates)
 	transactionsListHandler := handler.NewTransactionsListHandler(balanceService, adminChecker, templates)
 	photoHandler := handler.NewPhotoHandler(photoService, templates)
-	profileHandler := handler.NewProfileHandler(userRepo, adminChecker, templates)
+	profileHandler := handler.NewProfileHandler(userRepo, authService, adminChecker, templates)
 	exportHandler := handler.NewExportHandler(balanceService)
 	adminHandler := handler.NewAdminHandler(authService, adminChecker, templates)
 
@@ -125,7 +125,10 @@ func main() {
 	mux.HandleFunc("/transactions/debtors", csrf(sessions.RequireAuth(transactionsListHandler.Debtors)))
 	mux.HandleFunc("/transactions/new", csrf(sessions.RequireAuth(transactionHandler.RecordPage)))
 	mux.HandleFunc("/transactions/mark-paid", csrf(sessions.RequireAuth(transactionHandler.MarkPaid)))
+	mux.HandleFunc("/transactions/confirm", csrf(sessions.RequireAuth(transactionHandler.Confirm)))
+	mux.HandleFunc("/transactions/reject", csrf(sessions.RequireAuth(transactionHandler.Reject)))
 	mux.HandleFunc("/profile/edit", csrf(sessions.RequireAuth(profileHandler.EditProfilePage)))
+	mux.HandleFunc("/profile/display-name", csrf(sessions.RequireAuth(profileHandler.UpdateDisplayName)))
 	mux.HandleFunc("/photo/upload", csrf(sessions.RequireAuth(photoHandler.Upload)))
 	mux.HandleFunc("/transactions/export.csv", csrf(sessions.RequireAuth(exportHandler.TransactionsCSV)))
 	mux.HandleFunc("/admin/reset-password", csrf(sessions.RequireAuth(adminHandler.ResetPasswordPage)))
@@ -212,6 +215,17 @@ func createTables(db *sql.DB) error {
 	}
 
 	if _, err := db.Exec(`ALTER TABLE transactions ADD COLUMN amount_paid REAL NOT NULL DEFAULT 0`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") {
+			return err
+		}
+	}
+
+	// confirmation_status tracks whether the buyer has accepted, rejected, or
+	// not yet responded to a recorded transaction — separate from the
+	// existing "status" column, which tracks payment state (pending/paid).
+	// Existing rows default to "confirmed" so transactions recorded before
+	// this feature existed aren't retroactively put in dispute.
+	if _, err := db.Exec(`ALTER TABLE transactions ADD COLUMN confirmation_status TEXT NOT NULL DEFAULT 'confirmed'`); err != nil {
 		if !strings.Contains(err.Error(), "duplicate column") {
 			return err
 		}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"crdledger/internal/models"
 	"crdledger/internal/repository"
 )
 
@@ -13,6 +14,7 @@ var ErrPaidDateInFuture = errors.New("payment date cannot be in the future")
 var ErrPaidDateBeforeCreated = errors.New("payment date cannot be before the transaction was created")
 var ErrInvalidPaymentAmount = errors.New("payment amount must be positive")
 var ErrPaymentExceedsBalance = errors.New("payment amount is more than the remaining balance")
+var ErrNotConfirmed = errors.New("the buyer must confirm this transaction before it can be marked as paid")
 
 // epsilon absorbs float rounding noise so a payment of, say, exactly the
 // remaining balance doesn't get rejected for being 0.0000000001 over.
@@ -26,6 +28,10 @@ func (s *TransactionService) MarkPaid(transactionID, requestingUserID int64, pay
 
 	if t.SellerID != requestingUserID {
 		return ErrNotSeller
+	}
+
+	if t.ConfirmationStatus != models.ConfirmationConfirmed {
+		return ErrNotConfirmed
 	}
 
 	if t.Status == "paid" {

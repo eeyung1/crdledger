@@ -5,10 +5,16 @@
 		<div class="tx-name">{{.Tx.CounterpartName}}</div>
 		<div class="tx-desc">{{.Tx.Description}}</div>
 		<div class="tx-meta-row">
+			{{if .Tx.IsPendingConfirmation}}
+			<span class="status-pill pending">awaiting confirmation</span>
+			{{else if .Tx.IsRejected}}
+			<span class="status-pill rejected">rejected</span>
+			{{else}}
 			<span class="status-pill {{if .Tx.IsPartial}}partial{{else}}{{.Tx.Status}}{{end}}">
 				{{if eq .Tx.Status "paid"}}{{template "icon_check"}}{{end}}
 				{{if .Tx.IsPartial}}partial{{else}}{{.Tx.Status}}{{end}}{{if .Tx.PaidAt}} · {{.Tx.PaidAt.Format "Jan 2, 2006"}}{{end}}
 			</span>
+			{{end}}
 			{{if .Tx.IsPartial}}
 			<span class="text-footnote">{{printf "%.2f" .Tx.AmountPaid}} paid · {{printf "%.2f" .Tx.RemainingBalance}} remaining</span>
 			{{end}}
@@ -23,7 +29,23 @@
 	</div>
 	<div class="tx-end">
 		<div class="amount-body">{{printf "%.2f" .Tx.Amount}}</div>
-		{{if and .Tx.IsSeller (eq .Tx.Status "pending")}}
+		{{if .Tx.CanRespond}}
+		<div class="tx-actions">
+			<form method="POST" action="/transactions/confirm"
+				hx-post="/transactions/confirm" hx-target="closest .tx-row" hx-swap="outerHTML">
+				<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+				<input type="hidden" name="transaction_id" value="{{.Tx.ID}}">
+				<button type="submit" class="btn btn-primary btn-sm">Accept</button>
+			</form>
+			<form method="POST" action="/transactions/reject"
+				hx-post="/transactions/reject" hx-target="closest .tx-row" hx-swap="outerHTML">
+				<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+				<input type="hidden" name="transaction_id" value="{{.Tx.ID}}">
+				<button type="submit" class="btn btn-ghost btn-sm">Reject</button>
+			</form>
+		</div>
+		{{end}}
+		{{if and .Tx.IsSeller (eq .Tx.Status "pending") (eq .Tx.ConfirmationStatus "confirmed")}}
 		<form method="POST" action="/transactions/mark-paid" class="tx-actions"
 			hx-post="/transactions/mark-paid" hx-target="closest .tx-row" hx-swap="outerHTML"
 			hx-indicator="#paid-spinner-{{.Tx.ID}}">

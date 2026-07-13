@@ -21,22 +21,26 @@ const sparklineWeeks = 8
 // TransactionView is a role-aware presentation of a transaction from the
 // perspective of the currently logged-in user.
 type TransactionView struct {
-	ID                  int64
-	CounterpartName     string
-	CounterpartUsername string
-	Role                string // "You are owed" or "You owe"
-	Amount              float64
-	Description         string
-	Status              string
-	IsSeller            bool
-	CreatedAt           time.Time
-	PaidAt              *time.Time
-	PhotoPath           string  // optional receipt photo, empty if none was attached
-	DaysPending         int     // 0 once paid; only meaningful while Status == "pending"
-	ReminderText        string  // pre-written nudge, only set when a reminder is sensible to offer
-	AmountPaid          float64 // running total paid so far
-	RemainingBalance    float64 // Amount - AmountPaid; 0 once fully paid
-	IsPartial           bool    // true when some (but not all) of the amount has been paid
+	ID                    int64
+	CounterpartName       string
+	CounterpartUsername   string
+	Role                  string // "You are owed" or "You owe"
+	Amount                float64
+	Description           string
+	Status                string
+	IsSeller              bool
+	CreatedAt             time.Time
+	PaidAt                *time.Time
+	PhotoPath             string  // optional receipt photo, empty if none was attached
+	DaysPending           int     // 0 once paid; only meaningful while Status == "pending"
+	ReminderText          string  // pre-written nudge, only set when a reminder is sensible to offer
+	AmountPaid            float64 // running total paid so far
+	RemainingBalance      float64 // Amount - AmountPaid; 0 once fully paid
+	IsPartial             bool    // true when some (but not all) of the amount has been paid
+	ConfirmationStatus    string  // "pending", "confirmed", or "rejected"
+	IsPendingConfirmation bool    // true while the buyer hasn't responded yet
+	IsRejected            bool    // true if the buyer rejected this record
+	CanRespond            bool    // true when the viewer is the buyer and a response is still needed
 }
 
 // CounterpartyNet is one bar in the "who owes who the most" chart — pending
@@ -63,6 +67,7 @@ type Balance struct {
 	TotalOwed       float64 // this user owes as buyer
 	NetPosition     float64 // TotalReceivable - TotalOwed, the single headline number
 	Transactions    []TransactionView
+	NeedsResponse   []TransactionView // pending transactions where this user is the buyer — awaiting Accept/Reject
 	TopCreditors    []CounterpartyNet // people who owe this user, netted, sorted desc, capped
 	TopDebtors      []CounterpartyNet // people this user owes, netted, sorted desc, capped
 	Sparkline       Sparkline
@@ -92,7 +97,10 @@ func (s *BalanceService) GetBalance(userID int64) (*Balance, error) {
 			return nil, err
 		}
 
-		if t.Status == "pending" {
+		// Only confirmed transactions count toward anyone's numbers — a
+		// pending or rejected entry is visible (for dispute history / so
+		// the buyer can respond) but never moves the balance.
+		if t.Status == "pending" && t.ConfirmationStatus == models.ConfirmationConfirmed {
 			remaining := t.Amount - t.AmountPaid
 			key := view.CounterpartName + "|" + view.CounterpartUsername
 			if t.SellerID == userID {
@@ -102,6 +110,10 @@ func (s *BalanceService) GetBalance(userID int64) (*Balance, error) {
 				balance.TotalOwed += remaining
 				netByCounterparty[key] -= remaining
 			}
+		}
+
+		if t.ConfirmationStatus == models.ConfirmationPending && t.BuyerID == userID {
+			balance.NeedsResponse = append(balance.NeedsResponse, view)
 		}
 
 		balance.Transactions = append(balance.Transactions, view)
@@ -186,6 +198,9 @@ func buildSparkline(txs []models.Transaction, userID int64, weeks int) Sparkline
 		asOf := now.AddDate(0, 0, -7*(weeks-i))
 		var net float64
 		for _, t := range txs {
+			if t.ConfirmationStatus != models.ConfirmationConfirmed {
+				continue // never confirmed (or since rejected) — never part of the balance
+			}
 			if t.CreatedAt.After(asOf) {
 				continue
 			}
@@ -289,6 +304,10 @@ func (s *BalanceService) toView(t models.Transaction, userID int64) (Transaction
 		AmountPaid:          t.AmountPaid,
 		RemainingBalance:    remaining,
 		IsPartial:           t.Status == "pending" && t.AmountPaid > 0,
+		ConfirmationStatus:    t.ConfirmationStatus,
+		IsPendingConfirmation: t.ConfirmationStatus == models.ConfirmationPending,
+		IsRejected:            t.ConfirmationStatus == models.ConfirmationRejected,
+		CanRespond:            !isSeller && t.ConfirmationStatus == models.ConfirmationPending,
 	}
 	if t.PhotoPath != nil {
 		view.PhotoPath = *t.PhotoPath

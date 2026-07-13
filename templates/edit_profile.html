@@ -20,6 +20,19 @@
 	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.PhotoError}}</div>
 	{{end}}
 
+	{{if .NameError}}
+	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.NameError}}</div>
+	{{end}}
+
+	<form method="POST" action="/profile/display-name" class="stack surface card">
+		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+		<label>
+			Display name
+			<input type="text" name="display_name" value="{{.DisplayName}}" maxlength="60" required>
+		</label>
+		<button type="submit" class="btn-primary">Save name</button>
+	</form>
+
 	<form method="POST" action="/photo/upload" enctype="multipart/form-data" class="stack surface card">
 		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 		<label>

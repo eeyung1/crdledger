@@ -77,6 +77,11 @@ func (r *UserRepository) UpdatePhotoPath(userID int64, photoPath string) error {
 	return err
 }
 
+func (r *UserRepository) UpdateDisplayName(userID int64, displayName string) error {
+	_, err := r.db.Exec(`UPDATE users SET display_name = ? WHERE id = ?`, displayName, userID)
+	return err
+}
+
 func (r *UserRepository) UpdatePasswordHash(userID int64, newHash string) error {
 	_, err := r.db.Exec(`UPDATE users SET password_hash = ? WHERE id = ?`, newHash, userID)
 	return err
