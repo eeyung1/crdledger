@@ -38,9 +38,9 @@ type TransactionView struct {
 	RemainingBalance      float64 // Amount - AmountPaid; 0 once fully paid
 	IsPartial             bool    // true when some (but not all) of the amount has been paid
 	ConfirmationStatus    string  // "pending", "confirmed", or "rejected"
-	IsPendingConfirmation bool    // true while the buyer hasn't responded yet
-	IsRejected            bool    // true if the buyer rejected this record
-	CanRespond            bool    // true when the viewer is the buyer and a response is still needed
+	IsPendingConfirmation bool    // true while the other party hasn't responded yet
+	IsRejected            bool    // true if the other party rejected this record
+	CanRespond            bool    // true when the viewer did NOT create this entry and a response is still needed
 }
 
 // CounterpartyNet is one bar in the "who owes who the most" chart — pending
@@ -67,7 +67,7 @@ type Balance struct {
 	TotalOwed       float64 // this user owes as buyer
 	NetPosition     float64 // TotalReceivable - TotalOwed, the single headline number
 	Transactions    []TransactionView
-	NeedsResponse   []TransactionView // pending transactions where this user is the buyer — awaiting Accept/Reject
+	NeedsResponse   []TransactionView // pending transactions this user didn't create — awaiting their Accept/Reject
 	TopCreditors    []CounterpartyNet // people who owe this user, netted, sorted desc, capped
 	TopDebtors      []CounterpartyNet // people this user owes, netted, sorted desc, capped
 	Sparkline       Sparkline
@@ -99,7 +99,7 @@ func (s *BalanceService) GetBalance(userID int64) (*Balance, error) {
 
 		// Only confirmed transactions count toward anyone's numbers — a
 		// pending or rejected entry is visible (for dispute history / so
-		// the buyer can respond) but never moves the balance.
+		// the other party can respond) but never moves the balance.
 		if t.Status == "pending" && t.ConfirmationStatus == models.ConfirmationConfirmed {
 			remaining := t.Amount - t.AmountPaid
 			key := view.CounterpartName + "|" + view.CounterpartUsername
@@ -112,7 +112,7 @@ func (s *BalanceService) GetBalance(userID int64) (*Balance, error) {
 			}
 		}
 
-		if t.ConfirmationStatus == models.ConfirmationPending && t.BuyerID == userID {
+		if t.ConfirmationStatus == models.ConfirmationPending && t.CreatedByID != userID {
 			balance.NeedsResponse = append(balance.NeedsResponse, view)
 		}
 
@@ -291,23 +291,23 @@ func (s *BalanceService) toView(t models.Transaction, userID int64) (Transaction
 
 	remaining := t.Amount - t.AmountPaid
 	view := TransactionView{
-		ID:                  t.ID,
-		CounterpartName:     counterpart.DisplayName,
-		CounterpartUsername: counterpart.Username,
-		Role:                role,
-		Amount:              t.Amount,
-		Description:         t.Description,
-		Status:              t.Status,
-		IsSeller:            isSeller,
-		CreatedAt:           t.CreatedAt,
-		PaidAt:              t.PaidAt,
-		AmountPaid:          t.AmountPaid,
-		RemainingBalance:    remaining,
-		IsPartial:           t.Status == "pending" && t.AmountPaid > 0,
+		ID:                    t.ID,
+		CounterpartName:       counterpart.DisplayName,
+		CounterpartUsername:   counterpart.Username,
+		Role:                  role,
+		Amount:                t.Amount,
+		Description:           t.Description,
+		Status:                t.Status,
+		IsSeller:              isSeller,
+		CreatedAt:             t.CreatedAt,
+		PaidAt:                t.PaidAt,
+		AmountPaid:            t.AmountPaid,
+		RemainingBalance:      remaining,
+		IsPartial:             t.Status == "pending" && t.AmountPaid > 0,
 		ConfirmationStatus:    t.ConfirmationStatus,
 		IsPendingConfirmation: t.ConfirmationStatus == models.ConfirmationPending,
 		IsRejected:            t.ConfirmationStatus == models.ConfirmationRejected,
-		CanRespond:            !isSeller && t.ConfirmationStatus == models.ConfirmationPending,
+		CanRespond:            t.CreatedByID != userID && t.ConfirmationStatus == models.ConfirmationPending,
 	}
 	if t.PhotoPath != nil {
 		view.PhotoPath = *t.PhotoPath

@@ -90,8 +90,8 @@ func (h *TransactionHandler) renderRowFragment(w http.ResponseWriter, r *http.Re
 			errMsg = "That's more than the remaining balance."
 		case errors.Is(markErr, service.ErrNotConfirmed):
 			errMsg = "The buyer needs to confirm this transaction before it can be marked paid."
-		case errors.Is(markErr, service.ErrNotBuyer):
-			errMsg = "Only the buyer can confirm or reject this transaction."
+		case errors.Is(markErr, service.ErrNotCounterparty):
+			errMsg = "Only the other party on this transaction can confirm or reject it."
 		case errors.Is(markErr, service.ErrAlreadyResponded):
 			errMsg = "This transaction has already been confirmed or rejected."
 		default:

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<link rel="stylesheet" href="/static/css/style.css">
+	{{template "pwa_head" .}}
+	<title>Add an order in crdledger</title>
+</head>
+<body>
+{{template "sidebar" .}}
+	<p class="text-caption">New entry</p>
+	<h1 class="text-title-1 page-title">Add an order</h1>
+	<p class="text-footnote">Self-report something you bought — the seller will need to accept it before it counts.</p>
+
+	{{template "order_form" .}}
+{{template "sidebar_end" .}}
+</body>
+</html>

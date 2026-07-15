@@ -84,7 +84,10 @@
 	{{end}}
 	{{end}}
 
-	<a href="/transactions/new" class="btn btn-primary btn-max only-desktop">{{template "icon_record"}} Record a transaction</a>
+	<div class="btn-row only-desktop">
+		<a href="/transactions/new" class="btn btn-primary btn-max">{{template "icon_record"}} Record a transaction</a>
+		<a href="/orders/new" class="btn btn-ghost btn-max">{{template "icon_cart"}} Add orders</a>
+	</div>
 {{template "sidebar_end" .}}
 </body>
 </html>

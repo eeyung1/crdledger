@@ -8,6 +8,7 @@
 		<a class="nav-link" data-nav="/dashboard" href="/dashboard">{{template "icon_dashboard"}} Dashboard</a>
 		<a class="nav-link" data-nav="/profile/edit" href="/profile/edit">{{template "icon_profile"}} Edit profile</a>
 		<a class="nav-link" data-nav="/transactions/new" href="/transactions/new">{{template "icon_record"}} Record a transaction</a>
+	<a class="nav-link" data-nav="/orders/new" href="/orders/new">{{template "icon_cart"}} Add orders</a>
 		<a class="nav-link" data-nav="/transactions" href="/transactions">{{template "icon_list"}} Transactions</a>
 		{{if .IsAdmin}}
 		<a class="nav-link" data-nav="/admin/reset-password" href="/admin/reset-password">{{template "icon_admin"}} Reset a password</a>
@@ -35,9 +36,15 @@
 	<nav class="tabbar only-mobile" aria-label="Primary">
 		<a class="tab-link" data-nav="/dashboard" href="/dashboard">{{template "icon_dashboard"}}<span>Home</span></a>
 		<a class="tab-link" data-nav="/transactions" href="/transactions">{{template "icon_list"}}<span>Ledger</span></a>
-		<a class="tab-link tab-fab" data-nav="/transactions/new" href="/transactions/new" aria-label="Record a transaction">
-			<span class="tab-fab-circle">{{template "icon_record"}}</span>
-		</a>
+		<details class="tab-link tab-fab">
+			<summary class="tab-fab-summary" aria-label="Add a new entry">
+				<span class="tab-fab-circle">{{template "icon_record"}}</span>
+			</summary>
+			<div class="tab-fab-menu">
+				<a href="/transactions/new" class="tab-fab-option">{{template "icon_record"}} Record a transaction</a>
+				<a href="/orders/new" class="tab-fab-option">{{template "icon_cart"}} Add orders</a>
+			</div>
+		</details>
 		<a class="tab-link" data-nav="/profile/edit" href="/profile/edit">{{template "icon_profile"}}<span>Profile</span></a>
 		<form method="POST" action="/logout" class="tab-logout-form">
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">

@@ -64,8 +64,8 @@ func (h *TransactionHandler) respondToTransaction(w http.ResponseWriter, r *http
 
 func httpErrorForConfirmation(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, service.ErrNotBuyer):
-		http.Error(w, "only the buyer can confirm or reject this transaction", http.StatusForbidden)
+	case errors.Is(err, service.ErrNotCounterparty):
+		http.Error(w, "only the other party on this transaction can confirm or reject it", http.StatusForbidden)
 	case errors.Is(err, service.ErrAlreadyResponded):
 		http.Error(w, "this transaction has already been confirmed or rejected", http.StatusBadRequest)
 	case errors.Is(err, service.ErrTransactionNotFound):
