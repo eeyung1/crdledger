@@ -81,6 +81,32 @@
     return run(STORES.outbox, 'readwrite', function (store) { store.put(row); }).then(function () { return row; });
   }
 
+  function updateOperation(operationId, changes) {
+    if (!operationId) return Promise.reject(new Error('operationId is required'));
+    return openDB().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(STORES.outbox, 'readwrite');
+        var store = tx.objectStore(STORES.outbox);
+        var getRequest = store.get(operationId);
+        var updated;
+        getRequest.onsuccess = function () {
+          var current = getRequest.result;
+          if (!current) {
+            tx.abort();
+            reject(new Error('offline operation not found'));
+            return;
+          }
+          updated = Object.assign({}, current, changes || {}, { updatedAt: Date.now() });
+          store.put(updated);
+        };
+        getRequest.onerror = function () { reject(getRequest.error); };
+        tx.oncomplete = function () { db.close(); resolve(updated); };
+        tx.onerror = function () { db.close(); reject(tx.error); };
+        tx.onabort = function () { db.close(); };
+      });
+    });
+  }
+
   function listOutbox() {
     return openDB().then(function (db) {
       var tx = db.transaction(STORES.outbox, 'readonly');
@@ -110,6 +136,7 @@
     putSnapshot: putSnapshot,
     getSnapshot: getSnapshot,
     enqueue: enqueue,
+    updateOperation: updateOperation,
     listOutbox: listOutbox,
     removeOperation: removeOperation,
     setMeta: setMeta,
