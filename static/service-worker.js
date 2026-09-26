@@ -5,13 +5,15 @@
 //    there's truly no connection.
 //  - Static assets (css/js/icons/fonts): cache-first, since they're
 //    versioned by CACHE_NAME and change only on deploy.
-const CACHE_NAME = 'crdledger-static-v3';
+const CACHE_NAME = 'crdledger-static-v4';
 const OFFLINE_URL = '/static/offline.html';
 
 const PRECACHE_URLS = [
 	'/static/css/style.css',
 	'/static/js/app.js',
 	'/static/js/htmx.min.js',
+	'/static/js/offline-store.js',
+	'/static/js/offline-transactions.js',
 	'/static/manifest.json',
 	'/static/icons/icon.svg',
 	'/static/icons/icon-192.png',
