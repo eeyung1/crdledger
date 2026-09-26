@@ -12,6 +12,7 @@ var ErrInvalidDescription = errors.New("description is required")
 var ErrBuyerNotFound = errors.New("no user with that username")
 var ErrSellerNotFound = errors.New("no user with that username")
 var ErrCannotRecordSelf = errors.New("you cannot record a transaction with yourself")
+var ErrOperationIDRequired = errors.New("client operation id is required")
 
 type TransactionService struct {
 	transactions *repository.TransactionRepository
@@ -22,7 +23,7 @@ func NewTransactionService(transactions *repository.TransactionRepository, users
 	return &TransactionService{transactions: transactions, users: users}
 }
 
-func (s *TransactionService) Record(sellerID int64, buyerUsername string, amount float64, description, receiptPath string) (*models.Transaction, error) {
+func (s *TransactionService) buildSellerTransaction(sellerID int64, buyerUsername string, amount float64, description, receiptPath string) (*models.Transaction, error) {
 	if amount <= 0 {
 		return nil, ErrInvalidAmount
 	}
@@ -37,28 +38,43 @@ func (s *TransactionService) Record(sellerID int64, buyerUsername string, amount
 		}
 		return nil, err
 	}
-
 	if buyer.ID == sellerID {
 		return nil, ErrCannotRecordSelf
 	}
 
 	t := &models.Transaction{
-		SellerID:    sellerID,
-		BuyerID:     buyer.ID,
-		Amount:      amount,
-		Description: description,
-		Status:      "pending",
-		CreatedByID: sellerID,
+		SellerID: sellerID, BuyerID: buyer.ID, Amount: amount,
+		Description: description, Status: "pending", CreatedByID: sellerID,
 	}
 	if receiptPath != "" {
 		t.PhotoPath = &receiptPath
 	}
+	return t, nil
+}
 
+func (s *TransactionService) Record(sellerID int64, buyerUsername string, amount float64, description, receiptPath string) (*models.Transaction, error) {
+	t, err := s.buildSellerTransaction(sellerID, buyerUsername, amount, description, receiptPath)
+	if err != nil {
+		return nil, err
+	}
 	if err := s.transactions.Create(t); err != nil {
 		return nil, err
 	}
-
 	return t, nil
+}
+
+// RecordIdempotent is the sync-safe version of Record. A client-generated
+// operation ID identifies one logical mutation across retries. The returned
+// boolean is true only when this call created the canonical transaction.
+func (s *TransactionService) RecordIdempotent(sellerID int64, buyerUsername string, amount float64, description, operationID string) (*models.Transaction, bool, error) {
+	if operationID == "" {
+		return nil, false, ErrOperationIDRequired
+	}
+	t, err := s.buildSellerTransaction(sellerID, buyerUsername, amount, description, "")
+	if err != nil {
+		return nil, false, err
+	}
+	return s.transactions.CreateIdempotent(t, operationID)
 }
 
 // RecordOrder lets a buyer self-report an order they placed — the mirror
@@ -88,12 +104,8 @@ func (s *TransactionService) RecordOrder(buyerID int64, sellerUsername string, a
 	}
 
 	t := &models.Transaction{
-		SellerID:    seller.ID,
-		BuyerID:     buyerID,
-		Amount:      amount,
-		Description: description,
-		Status:      "pending",
-		CreatedByID: buyerID,
+		SellerID: seller.ID, BuyerID: buyerID, Amount: amount,
+		Description: description, Status: "pending", CreatedByID: buyerID,
 	}
 	if receiptPath != "" {
 		t.PhotoPath = &receiptPath
@@ -102,6 +114,5 @@ func (s *TransactionService) RecordOrder(buyerID int64, sellerUsername string, a
 	if err := s.transactions.Create(t); err != nil {
 		return nil, err
 	}
-
 	return t, nil
 }
