@@ -5,11 +5,15 @@
   var store = global.CRDLedgerOfflineStore;
   if (!store) return;
 
-  var SNAPSHOT_USER = 'current-user';
   var SNAPSHOT_KIND = 'transactions-list';
 
   function ledgerWrap() {
     return document.getElementById('tx-list-wrap');
+  }
+
+  function snapshotUser() {
+    var wrap = ledgerWrap();
+    return wrap ? String(wrap.getAttribute('data-offline-user-id') || '') : '';
   }
 
   function statusHost() {
@@ -42,8 +46,9 @@
 
   function cacheCurrentLedger() {
     var wrap = ledgerWrap();
-    if (!wrap || !navigator.onLine) return Promise.resolve();
-    return store.putSnapshot(SNAPSHOT_USER, SNAPSHOT_KIND, {
+    var user = snapshotUser();
+    if (!wrap || !user || !navigator.onLine) return Promise.resolve();
+    return store.putSnapshot(user, SNAPSHOT_KIND, {
       html: wrap.innerHTML,
       path: global.location.pathname + global.location.search,
       savedAt: new Date().toISOString()
@@ -52,8 +57,9 @@
 
   function restoreCachedLedger() {
     var wrap = ledgerWrap();
-    if (!wrap) return Promise.resolve(false);
-    return store.getSnapshot(SNAPSHOT_USER, SNAPSHOT_KIND).then(function (snapshot) {
+    var user = snapshotUser();
+    if (!wrap || !user) return Promise.resolve(false);
+    return store.getSnapshot(user, SNAPSHOT_KIND).then(function (snapshot) {
       if (!snapshot || !snapshot.data || !snapshot.data.html) return false;
       wrap.innerHTML = snapshot.data.html;
       setStatus('Offline: showing the most recently saved ledger on this device.', '');
