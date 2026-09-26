@@ -41,6 +41,7 @@ func (h *TransactionsListHandler) render(w http.ResponseWriter, r *http.Request,
 			"LoadError": true,
 			"CSRFToken": csrfToken,
 			"IsAdmin":   h.admin.IsAdmin(r),
+			"UserID":    userID,
 		}
 		if isHTMXRequest(r) {
 			h.templates.ExecuteTemplate(w, "tx_list_fragment", data)
@@ -64,6 +65,7 @@ func (h *TransactionsListHandler) render(w http.ResponseWriter, r *http.Request,
 		"ShowSearch":   len(roleFiltered) > searchThreshold,
 		"IsAdmin":      h.admin.IsAdmin(r),
 		"EmptyMessage": emptyMessage,
+		"UserID":       userID,
 	}
 
 	// HTMX-driven search only needs the list fragment re-rendered, not the

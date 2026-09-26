@@ -7,7 +7,7 @@
 	{{template "pwa_head" .}}
 	<title>{{.Title}} crdledger</title>
 </head>
-<body>
+<body data-offline-user-key="{{.UserID}}">
 {{template "sidebar" .}}
 	<div class="list-header">
 		<div>

@@ -1,0 +1,27 @@
+name: Go tests
+
+on:
+  push:
+    branches:
+      - feature/offline-first-sync
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install SQLite test driver
+        run: go get modernc.org/sqlite
+      - name: Run tests
+        run: go test ./...

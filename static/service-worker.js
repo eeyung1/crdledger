@@ -2,16 +2,20 @@
 // Strategy, deliberately simple:
 //  - HTML (navigations): network-first. Ledger balances must never be
 //    served stale, so we only fall back to the cached offline page when
-//    there's truly no connection.
+//    there's truly no connection. Ledger snapshots are restored by
+//    offline-ledger.js from IndexedDB on supported ledger pages.
 //  - Static assets (css/js/icons/fonts): cache-first, since they're
 //    versioned by CACHE_NAME and change only on deploy.
-const CACHE_NAME = 'crdledger-static-v3';
+const CACHE_NAME = 'crdledger-static-v6';
 const OFFLINE_URL = '/static/offline.html';
 
 const PRECACHE_URLS = [
 	'/static/css/style.css',
 	'/static/js/app.js',
 	'/static/js/htmx.min.js',
+	'/static/js/offline-store.js',
+	'/static/js/offline-transactions.js',
+	'/static/js/offline-ledger.js',
 	'/static/manifest.json',
 	'/static/icons/icon.svg',
 	'/static/icons/icon-192.png',

@@ -75,6 +75,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService, sessions, templates)
 	dashboardHandler := handler.NewDashboardHandler(userRepo, balanceService, adminChecker, templates)
 	transactionHandler := handler.NewTransactionHandler(transactionService, balanceService, photoService, adminChecker, templates)
+	syncHandler := handler.NewSyncHandler(transactionService)
 	orderHandler := handler.NewOrderHandler(transactionService, photoService, adminChecker, templates)
 	transactionsMenuHandler := handler.NewTransactionsMenuHandler(adminChecker, templates)
 	transactionsListHandler := handler.NewTransactionsListHandler(balanceService, adminChecker, templates)
@@ -125,6 +126,7 @@ func main() {
 	mux.HandleFunc("/transactions/creditors", csrf(sessions.RequireAuth(transactionsListHandler.Creditors)))
 	mux.HandleFunc("/transactions/debtors", csrf(sessions.RequireAuth(transactionsListHandler.Debtors)))
 	mux.HandleFunc("/transactions/new", csrf(sessions.RequireAuth(transactionHandler.RecordPage)))
+	mux.HandleFunc("/api/sync/transactions", csrf(sessions.RequireAuth(syncHandler.CreateTransaction)))
 	mux.HandleFunc("/orders/new", csrf(sessions.RequireAuth(orderHandler.NewOrderPage)))
 	mux.HandleFunc("/transactions/mark-paid", csrf(sessions.RequireAuth(transactionHandler.MarkPaid)))
 	mux.HandleFunc("/transactions/confirm", csrf(sessions.RequireAuth(transactionHandler.Confirm)))
@@ -198,6 +200,7 @@ func createTables(db *sql.DB) error {
 	indexes := []string{
 		`CREATE INDEX IF NOT EXISTS idx_transactions_seller ON transactions(seller_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_transactions_buyer ON transactions(buyer_id);`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_client_operation_id ON transactions(client_operation_id) WHERE client_operation_id IS NOT NULL;`,
 	}
 
 	if _, err := db.Exec(usersTable); err != nil {
@@ -222,23 +225,12 @@ func createTables(db *sql.DB) error {
 		}
 	}
 
-	// confirmation_status tracks whether the buyer has accepted, rejected, or
-	// not yet responded to a recorded transaction — separate from the
-	// existing "status" column, which tracks payment state (pending/paid).
-	// Existing rows default to "confirmed" so transactions recorded before
-	// this feature existed aren't retroactively put in dispute.
 	if _, err := db.Exec(`ALTER TABLE transactions ADD COLUMN confirmation_status TEXT NOT NULL DEFAULT 'confirmed'`); err != nil {
 		if !strings.Contains(err.Error(), "duplicate column") {
 			return err
 		}
 	}
 
-	// created_by tracks which side of the transaction actually submitted the
-	// entry — the seller recording a debt someone owes them, or a buyer
-	// self-reporting an order they placed. It's what "who must confirm
-	// this" is based on: whoever did NOT create it. Existing rows backfill
-	// to seller_id, since seller-recorded entries are all there was before
-	// buyer-initiated orders existed.
 	if _, err := db.Exec(`ALTER TABLE transactions ADD COLUMN created_by INTEGER`); err != nil {
 		if !strings.Contains(err.Error(), "duplicate column") {
 			return err
@@ -246,6 +238,14 @@ func createTables(db *sql.DB) error {
 	}
 	if _, err := db.Exec(`UPDATE transactions SET created_by = seller_id WHERE created_by IS NULL`); err != nil {
 		return err
+	}
+
+	// client_operation_id is generated once by an offline client for one
+	// logical mutation. Its unique index makes reconnect retries idempotent.
+	if _, err := db.Exec(`ALTER TABLE transactions ADD COLUMN client_operation_id TEXT`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") {
+			return err
+		}
 	}
 
 	for _, idx := range indexes {
