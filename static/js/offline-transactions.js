@@ -35,6 +35,11 @@
     };
   }
 
+  function currentCSRFToken(fallback) {
+    var input = document.querySelector('input[name="csrf_token"]');
+    return input && input.value ? input.value : (fallback || '');
+  }
+
   function valid(payload) {
     return payload.buyerUsername && payload.description && Number(payload.amount) > 0;
   }
@@ -82,7 +87,7 @@
   function syncOperation(operation) {
     return mark(operation, 'syncing', '').then(function (current) {
       var body = new URLSearchParams();
-      body.set('csrf_token', current.csrfToken || '');
+      body.set('csrf_token', currentCSRFToken(current.csrfToken));
       body.set('operation_id', current.operationId);
       body.set('buyer_username', current.buyerUsername);
       body.set('amount', current.amount);
