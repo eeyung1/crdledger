@@ -7,14 +7,14 @@ import (
 
 	"crdledger/internal/models"
 
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
+	_ "modernc.org/sqlite"
 )
 
 func newSyncTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
 	dbPath := filepath.Join(t.TempDir(), "sync-test.db")
-	db, err := sql.Open("libsql", "file:"+dbPath)
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		t.Fatalf("open test database: %v", err)
 	}
