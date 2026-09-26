@@ -39,6 +39,12 @@
     return payload.buyerUsername && payload.description && Number(payload.amount) > 0;
   }
 
+  function refreshStatus() {
+    if (typeof global.CRDLedgerRefreshSyncStatus === 'function') {
+      global.CRDLedgerRefreshSyncStatus();
+    }
+  }
+
   function showQueued(form) {
     var wrap = document.getElementById('record-form-wrap');
     if (!wrap) return;
@@ -62,27 +68,53 @@
     wrap.insertBefore(banner, form);
   }
 
-  function syncOperation(operation) {
-    var body = new URLSearchParams();
-    body.set('csrf_token', operation.csrfToken || '');
-    body.set('operation_id', operation.operationId);
-    body.set('buyer_username', operation.buyerUsername);
-    body.set('amount', operation.amount);
-    body.set('description', operation.description);
+  function mark(operation, status, errorMessage) {
+    return store.updateOperation(operation.operationId, {
+      status: status,
+      syncError: errorMessage || '',
+      lastAttemptAt: Date.now()
+    }).then(function (updated) {
+      refreshStatus();
+      return updated || operation;
+    });
+  }
 
-    return fetch('/sync/transactions', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-      body: body.toString()
-    }).then(function (response) {
-      return response.json().catch(function () { return {}; }).then(function (result) {
-        if (response.ok && (result.status === 'synced' || result.status === 'already_synced')) {
-          return store.removeOperation(operation.operationId);
-        }
-        var err = new Error(result.error || 'sync failed');
-        err.permanent = response.status >= 400 && response.status < 500;
-        throw err;
+  function syncOperation(operation) {
+    return mark(operation, 'syncing', '').then(function (current) {
+      var body = new URLSearchParams();
+      body.set('csrf_token', current.csrfToken || '');
+      body.set('operation_id', current.operationId);
+      body.set('buyer_username', current.buyerUsername);
+      body.set('amount', current.amount);
+      body.set('description', current.description);
+
+      return fetch('/sync/transactions', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: body.toString()
+      }).then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (result) {
+          if (response.ok && (result.status === 'synced' || result.status === 'already_synced')) {
+            return store.removeOperation(current.operationId).then(function () {
+              refreshStatus();
+              return result;
+            });
+          }
+
+          var message = result.error || ('Sync failed with status ' + response.status + '.');
+          var permanent = response.status >= 400 && response.status < 500;
+          return mark(current, permanent ? 'sync_failed' : 'pending_sync', message).then(function () {
+            var err = new Error(message);
+            err.permanent = permanent;
+            throw err;
+          });
+        });
+      }).catch(function (err) {
+        if (err && err.permanent) throw err;
+        return mark(current, 'pending_sync', err && err.message ? err.message : 'Network unavailable.').then(function () {
+          throw err;
+        });
       });
     });
   }
@@ -93,18 +125,17 @@
     return store.listOutbox().then(function (operations) {
       return operations.reduce(function (chain, operation) {
         return chain.then(function () {
-          if (operation.type !== 'create_transaction') return;
+          if (operation.type !== 'create_transaction' || operation.status === 'sync_failed') return;
           return syncOperation(operation).catch(function (err) {
-            // Keep network/server failures queued for a later retry. Validation
-            // failures also stay visible in storage for Task 4 status UI.
             if (!err.permanent) throw err;
           });
         });
       }, Promise.resolve());
     }).catch(function () {
-      // A later online event/page load retries the durable outbox.
+      // Retryable failures remain pending until the next reconnect/page load.
     }).finally(function () {
       syncing = false;
+      refreshStatus();
     });
   }
 
@@ -130,6 +161,7 @@
     store.enqueue(payload).then(function () {
       showQueued(form);
       form.reset();
+      refreshStatus();
     }).catch(function () {
       showError(form, 'Could not save this transaction offline on this device.');
     });
