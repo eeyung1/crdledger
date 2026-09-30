@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"time"
 
 	"crdledger/internal/middleware"
 	"crdledger/internal/repository"
@@ -40,6 +41,11 @@ func (h *ProfileHandler) EditProfilePage(w http.ResponseWriter, r *http.Request)
 		"PhotoError":  r.URL.Query().Get("photo_error"),
 		"DisplayName": user.DisplayName,
 		"Username":    user.Username,
+		"Email":       user.Email,
+		"IsSeller":    user.AccountType == "seller",
+		"SellerActive": user.AccountType == "seller" && user.SubscriptionStatus == "active" && (user.SubscriptionEndsAt == nil || user.SubscriptionEndsAt.After(time.Now())),
+		"SubscriptionPlan": user.SubscriptionPlan,
+		"SubscriptionEndsAt": user.SubscriptionEndsAt,
 		"NameError":   r.URL.Query().Get("name_error"),
 		"CSRFToken":   middleware.CSRFTokenFromContext(r),
 		"IsAdmin":     h.admin.IsAdmin(r),
