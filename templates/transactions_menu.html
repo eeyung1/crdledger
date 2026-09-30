@@ -7,7 +7,7 @@
 	{{template "pwa_head" .}}
 	<title>Transactions</title>
 </head>
-<body>
+<body data-offline-user-key="{{.UserID}}">
 {{template "sidebar" .}}
 	<p class="text-caption">The ledger</p>
 	<h1 class="text-title-1 page-title">Transactions</h1>

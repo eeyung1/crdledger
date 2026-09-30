@@ -10,6 +10,10 @@
 
   var syncing = false;
 
+  function accountKey() {
+    return String(document.body && document.body.getAttribute('data-offline-user-key') || '');
+  }
+
   function operationID() {
     if (global.crypto && typeof global.crypto.randomUUID === 'function') {
       return global.crypto.randomUUID();
@@ -31,6 +35,7 @@
       description: String(data.get('description') || '').trim(),
       csrfToken: String(data.get('csrf_token') || ''),
       type: 'create_transaction',
+      userKey: accountKey(),
       status: 'pending_sync'
     };
   }
@@ -41,7 +46,7 @@
   }
 
   function valid(payload) {
-    return payload.buyerUsername && payload.description && Number(payload.amount) > 0;
+    return payload.userKey && payload.buyerUsername && payload.description && Number(payload.amount) > 0;
   }
 
   function refreshStatus() {
@@ -128,9 +133,14 @@
     if (syncing || !navigator.onLine) return Promise.resolve();
     syncing = true;
     return store.listOutbox().then(function (operations) {
-      return operations.reduce(function (chain, operation) {
+      var userKey = accountKey();
+      var transactions = operations.filter(function (operation) {
+        return operation.userKey === userKey &&
+          operation.type === 'create_transaction';
+      });
+      return transactions.reduce(function (chain, operation) {
         return chain.then(function () {
-          if (operation.type !== 'create_transaction' || operation.status === 'sync_failed') return;
+          if (operation.status === 'sync_failed') return;
           return syncOperation(operation).catch(function (err) {
             if (!err.permanent) throw err;
           });

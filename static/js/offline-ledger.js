@@ -7,13 +7,16 @@
 
   var SNAPSHOT_KIND = 'transactions-list';
 
+  function pageUser() {
+    return String(document.body && document.body.getAttribute('data-offline-user-key') || '');
+  }
+
   function ledgerWrap() {
     return document.getElementById('tx-list-wrap');
   }
 
   function snapshotUser() {
-    var wrap = ledgerWrap();
-    return wrap ? String(wrap.getAttribute('data-offline-user-id') || '') : '';
+    return pageUser();
   }
 
   function statusHost() {
@@ -73,8 +76,9 @@
 
   function refreshQueueStatus() {
     return store.listOutbox().then(function (operations) {
+      var userKey = pageUser();
       var transactions = operations.filter(function (operation) {
-        return operation.type === 'create_transaction';
+        return operation.type === 'create_transaction' && operation.userKey === userKey;
       });
       var failed = transactions.filter(function (operation) { return operation.status === 'sync_failed'; });
       var syncing = transactions.filter(function (operation) { return operation.status === 'syncing'; });
