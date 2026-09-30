@@ -789,3 +789,14 @@ button:disabled, .btn:disabled { opacity: 0.6; cursor: default; transform: none;
 	.profile-identity { align-items: flex-start; }
 	.profile-identity .avatar.lg { width: 72px; height: 72px; }
 }
+
+.profile-edit-toggle { width: 100%; margin-bottom: var(--space-4); }
+.profile-edit-panel { padding: var(--space-4); display: grid; gap: var(--space-5); }
+.profile-edit-panel[hidden] { display: none; }
+.profile-edit-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.profile-edit-heading h2 { margin-top: var(--space-1); font: var(--text-headline); }
+.profile-edit-form { padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.profile-photo-picker input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.profile-photo-control { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
+.profile-photo-control .text-footnote { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 480px) { .profile-photo-control { align-items: flex-start; flex-direction: column; } }
