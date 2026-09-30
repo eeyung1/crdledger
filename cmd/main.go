@@ -84,7 +84,7 @@ func main() {
 	exportHandler := handler.NewExportHandler(balanceService)
 	adminHandler := handler.NewAdminHandler(authService, adminChecker, templates)
 	paystackService := service.NewPaystackService(cfg.PaystackSecretKey)
-	subscriptionHandler := handler.NewSubscriptionHandler(userRepo, paystackService, templates, cfg.PaystackSecretKey)
+	subscriptionHandler := handler.NewSubscriptionHandler(userRepo, paystackService, templates, cfg.PaystackSecretKey, cfg.AppBaseURL)
 
 	csrf := middleware.CSRF(cfg.SecureCookies)
 	authLimiter := middleware.NewRateLimiter(10, time.Minute)
@@ -155,6 +155,21 @@ func main() {
 	mux.HandleFunc("/admin/reset-password", csrf(sessions.RequireAuth(adminHandler.ResetPasswordPage)))
 
 	var root http.Handler = mux
+	// Keep one production origin. Render health checks stay local, while
+	// browser traffic reaching the legacy Render hostname or www is sent to
+	// the canonical crdledger.com origin with path and query preserved.
+	if cfg.Environment == "production" {
+		next := root
+		root = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			host := strings.ToLower(strings.Split(r.Host, ":")[0])
+			if r.URL.Path != "/healthz" && (host == "crdledger.onrender.com" || host == "www.crdledger.com") {
+				target := strings.TrimRight(cfg.AppBaseURL, "/") + r.URL.RequestURI()
+				http.Redirect(w, r, target, http.StatusPermanentRedirect)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 	root = middleware.SecurityHeaders(root)
 	if cfg.SecureCookies {
 		root = middleware.HSTS(root)

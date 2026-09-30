@@ -18,8 +18,8 @@ import (
 	"crdledger/internal/service"
 )
 
-type SubscriptionHandler struct { users *repository.UserRepository; paystack *service.PaystackService; templates *template.Template; secretKey string }
-func NewSubscriptionHandler(users *repository.UserRepository, paystack *service.PaystackService, templates *template.Template, secretKey string) *SubscriptionHandler { return &SubscriptionHandler{users:users,paystack:paystack,templates:templates,secretKey:secretKey} }
+type SubscriptionHandler struct { users *repository.UserRepository; paystack *service.PaystackService; templates *template.Template; secretKey string; appBaseURL string }
+func NewSubscriptionHandler(users *repository.UserRepository, paystack *service.PaystackService, templates *template.Template, secretKey, appBaseURL string) *SubscriptionHandler { return &SubscriptionHandler{users:users,paystack:paystack,templates:templates,secretKey:secretKey,appBaseURL:strings.TrimRight(appBaseURL, "/")} }
 
 func (h *SubscriptionHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost { http.Error(w,"method not allowed",http.StatusMethodNotAllowed); return }
@@ -44,7 +44,7 @@ func (h *SubscriptionHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	}
 	if email == "" { http.Error(w,"Add an email address before paying for a seller subscription.",http.StatusBadRequest); return }
 	ref := fmt.Sprintf("crdledger-%d-%d", id, time.Now().UnixNano())
-	callback := "https://" + r.Host + "/subscription/callback"
+	callback := h.appBaseURL + "/subscription/callback"
 	checkout, err := h.paystack.Initialize(email,plan,callback,ref); if err != nil { http.Error(w,"Could not start payment. Please try again.",http.StatusBadGateway); return }
 	if err := h.users.CreateSubscriptionPayment(id,ref,plan); err != nil { http.Error(w,"Could not save payment.",http.StatusInternalServerError); return }
 	http.Redirect(w,r,checkout,http.StatusSeeOther)
