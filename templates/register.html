@@ -35,7 +35,12 @@
 		<fieldset class="account-type-picker">
 			<legend>Account type</legend>
 			<label><input type="radio" name="account_type" value="buyer" required> Buyer <span class="text-footnote">Free · add orders and view your ledger</span></label>
-			<label><input type="radio" name="account_type" value="seller" required> Seller <span class="text-footnote">Requires activation · record credit transactions</span></label>
+			<label><input type="radio" name="account_type" value="seller" required> Seller <span class="text-footnote">Record credit transactions and manage repayments</span></label>
+		</fieldset>
+		<fieldset class="seller-plan-picker">
+			<legend>Seller plan</legend>
+			<label class="plan-card"><input type="radio" name="subscription_plan" value="monthly"> <span><strong>Monthly</strong><span class="text-footnote">₦2,000 / month</span></span></label>
+			<label class="plan-card"><input type="radio" name="subscription_plan" value="yearly"> <span><strong>Yearly</strong><span class="text-footnote">₦15,000 / year · Save ₦9,000</span></span></label>
 		</fieldset>
 		<button type="submit" class="btn-primary">Create account</button>
 	</form>

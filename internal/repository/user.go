@@ -19,8 +19,8 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 
 func (r *UserRepository) Create(user *models.User) error {
 	result, err := r.db.Exec(
-		`INSERT INTO users (username, password_hash, display_name, account_type, subscription_status) VALUES (?, ?, ?, ?, ?)`,
-		user.Username, user.PasswordHash, user.DisplayName, user.AccountType, user.SubscriptionStatus,
+		`INSERT INTO users (username, password_hash, display_name, account_type, subscription_status, subscription_plan) VALUES (?, ?, ?, ?, ?, ?)`,
+		user.Username, user.PasswordHash, user.DisplayName, user.AccountType, user.SubscriptionStatus, user.SubscriptionPlan,
 	)
 	if err != nil {
 		return err
@@ -39,11 +39,11 @@ func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
 	var photoPath sql.NullString
 	var subscriptionEndsAt sql.NullTime
 	row := r.db.QueryRow(
-		`SELECT id, username, password_hash, display_name, photo_path, account_type, subscription_status, subscription_ends_at, created_at FROM users WHERE username = ?`,
+		`SELECT id, username, password_hash, display_name, photo_path, account_type, subscription_status, subscription_plan, subscription_ends_at, created_at FROM users WHERE username = ?`,
 		username,
 	)
 
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.DisplayName, &photoPath, &u.AccountType, &u.SubscriptionStatus, &subscriptionEndsAt, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.DisplayName, &photoPath, &u.AccountType, &u.SubscriptionStatus, &u.SubscriptionPlan, &subscriptionEndsAt, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
@@ -60,11 +60,11 @@ func (r *UserRepository) GetByID(id int64) (*models.User, error) {
 	var photoPath sql.NullString
 	var subscriptionEndsAt sql.NullTime
 	row := r.db.QueryRow(
-		`SELECT id, username, password_hash, display_name, photo_path, account_type, subscription_status, subscription_ends_at, created_at FROM users WHERE id = ?`,
+		`SELECT id, username, password_hash, display_name, photo_path, account_type, subscription_status, subscription_plan, subscription_ends_at, created_at FROM users WHERE id = ?`,
 		id,
 	)
 
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.DisplayName, &photoPath, &u.AccountType, &u.SubscriptionStatus, &subscriptionEndsAt, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.DisplayName, &photoPath, &u.AccountType, &u.SubscriptionStatus, &u.SubscriptionPlan, &subscriptionEndsAt, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound

@@ -800,3 +800,10 @@ button:disabled, .btn:disabled { opacity: 0.6; cursor: default; transform: none;
 .profile-photo-control { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
 .profile-photo-control .text-footnote { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 480px) { .profile-photo-control { align-items: flex-start; flex-direction: column; } }
+
+.account-type-picker, .seller-plan-picker { border: 0; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
+.account-type-picker legend, .seller-plan-picker legend { font: var(--text-callout); margin-bottom: var(--space-2); }
+.account-type-picker label, .plan-card { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-elevated); cursor: pointer; }
+.account-type-picker label > span, .plan-card > span { display: grid; gap: var(--space-1); }
+.seller-plan-picker { padding-top: var(--space-2); }
+.plan-card strong { font: var(--text-headline); }
