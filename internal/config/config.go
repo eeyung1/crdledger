@@ -16,6 +16,7 @@ type Config struct {
 	SecureCookies  bool // true when the app is served over HTTPS
 	Environment    string
 	PaystackSecretKey string
+	AppBaseURL       string
 	AdminUsernames map[string]bool // usernames allowed to reset other users' passwords
 }
 
@@ -42,6 +43,7 @@ func Load() (Config, error) {
 		SessionSecret:  secret,
 		SecureCookies:  getEnv("SECURE_COOKIES", "false") == "true",
 		PaystackSecretKey: getEnv("PAYSTACK_SECRET_KEY", ""),
+		AppBaseURL:       strings.TrimRight(getEnv("APP_BASE_URL", "https://crdledger.com"), "/"),
 		Environment:    getEnv("ENVIRONMENT", "development"),
 		AdminUsernames: parseAdminUsernames(getEnv("ADMIN_USERNAMES", "")),
 	}
