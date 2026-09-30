@@ -25,14 +25,11 @@ func (h *SubscriptionHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost { http.Error(w,"method not allowed",http.StatusMethodNotAllowed); return }
 	id, ok := middleware.UserIDFromContext(r); if !ok { http.Redirect(w,r,"/login",http.StatusSeeOther); return }
 	u, err := h.users.GetByID(id); if err != nil { http.Error(w,"failed to load account",http.StatusInternalServerError); return }
-	plan := u.SubscriptionPlan
-	if u.AccountType == "buyer" {
-		plan = r.FormValue("subscription_plan")
-		if plan != "monthly" && plan != "yearly" { http.Error(w,"Choose a monthly or yearly seller plan.",http.StatusBadRequest); return }
-	} else if plan != "monthly" && plan != "yearly" {
-		plan = r.FormValue("subscription_plan")
-		if plan != "monthly" && plan != "yearly" { http.Error(w,"Choose a monthly or yearly seller plan.",http.StatusBadRequest); return }
+	plan := r.FormValue("subscription_plan")
+	if plan != "monthly" && plan != "yearly" {
+		plan = u.SubscriptionPlan
 	}
+	if plan != "monthly" && plan != "yearly" { http.Error(w,"Choose a monthly or yearly seller plan.",http.StatusBadRequest); return }
 	email := strings.TrimSpace(u.Email)
 	if u.AccountType == "buyer" {
 		email = strings.TrimSpace(r.FormValue("email"))
