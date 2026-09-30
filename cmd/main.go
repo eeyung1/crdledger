@@ -77,7 +77,7 @@ func main() {
 	transactionHandler := handler.NewTransactionHandler(userRepo, transactionService, balanceService, photoService, adminChecker, templates)
 	syncHandler := handler.NewSyncHandler(transactionService)
 	orderHandler := handler.NewOrderHandler(userRepo, transactionService, photoService, adminChecker, templates)
-	transactionsMenuHandler := handler.NewTransactionsMenuHandler(adminChecker, templates)
+	transactionsMenuHandler := handler.NewTransactionsMenuHandler(userRepo, adminChecker, templates)
 	transactionsListHandler := handler.NewTransactionsListHandler(balanceService, adminChecker, templates)
 	photoHandler := handler.NewPhotoHandler(photoService, templates)
 	profileHandler := handler.NewProfileHandler(userRepo, authService, adminChecker, templates)
