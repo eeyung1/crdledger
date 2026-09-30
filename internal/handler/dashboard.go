@@ -3,6 +3,7 @@ package handler
 import (
 	"html/template"
 	"net/http"
+	"time"
 
 	"crdledger/internal/middleware"
 	"crdledger/internal/repository"
@@ -37,6 +38,13 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		"UserID":      userID,
 		"DisplayName": user.DisplayName,
 		"PhotoPath":   user.PhotoPath,
+		"AccountType": user.AccountType,
+		"SubscriptionStatus": user.SubscriptionStatus,
+		"SubscriptionPlan": user.SubscriptionPlan,
+		"SubscriptionEndsAt": user.SubscriptionEndsAt,
+		"IsSeller": user.AccountType == "seller",
+		"SellerActive": user.AccountType == "seller" && user.SubscriptionStatus == "active" && (user.SubscriptionEndsAt == nil || user.SubscriptionEndsAt.After(time.Now())),
+		"SubscriptionActivated": r.URL.Query().Get("subscription") == "active",
 		"PhotoError":  r.URL.Query().Get("photo_error"),
 		"CSRFToken":   middleware.CSRFTokenFromContext(r),
 		"IsAdmin":     h.admin.IsAdmin(r),
