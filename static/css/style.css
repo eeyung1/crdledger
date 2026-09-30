@@ -454,6 +454,7 @@ form.stack { display: flex; flex-direction: column; gap: var(--space-4); }
 label { display: flex; flex-direction: column; gap: var(--space-2); font: var(--text-footnote); color: var(--text-secondary); }
 
 input[type="text"],
+input[type="email"],
 input[type="password"],
 input[type="number"],
 input[type="date"],
@@ -849,3 +850,5 @@ button:disabled, .btn:disabled { opacity: 0.6; cursor: default; transform: none;
 	.auth-page .pwa-install-card { bottom: calc(20px + var(--sab)); }
 	.pwa-install-actions .btn { flex: 1; }
 }
+
+.seller-plan-picker[hidden] { display: none; }
