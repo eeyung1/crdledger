@@ -19,8 +19,8 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 
 func (r *UserRepository) Create(user *models.User) error {
 	result, err := r.db.Exec(
-		`INSERT INTO users (username, password_hash, display_name) VALUES (?, ?, ?)`,
-		user.Username, user.PasswordHash, user.DisplayName,
+		`INSERT INTO users (username, password_hash, display_name, account_type, subscription_status) VALUES (?, ?, ?, ?, ?)`,
+		user.Username, user.PasswordHash, user.DisplayName, user.AccountType, user.SubscriptionStatus,
 	)
 	if err != nil {
 		return err
@@ -37,12 +37,13 @@ func (r *UserRepository) Create(user *models.User) error {
 func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
 	var u models.User
 	var photoPath sql.NullString
+	var subscriptionEndsAt sql.NullTime
 	row := r.db.QueryRow(
-		`SELECT id, username, password_hash, display_name, photo_path, created_at FROM users WHERE username = ?`,
+		`SELECT id, username, password_hash, display_name, photo_path, account_type, subscription_status, subscription_ends_at, created_at FROM users WHERE username = ?`,
 		username,
 	)
 
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.DisplayName, &photoPath, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.DisplayName, &photoPath, &u.AccountType, &u.SubscriptionStatus, &subscriptionEndsAt, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
@@ -50,18 +51,20 @@ func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
 		return nil, err
 	}
 	u.PhotoPath = photoPath.String
+	if subscriptionEndsAt.Valid { u.SubscriptionEndsAt = &subscriptionEndsAt.Time }
 	return &u, nil
 }
 
 func (r *UserRepository) GetByID(id int64) (*models.User, error) {
 	var u models.User
 	var photoPath sql.NullString
+	var subscriptionEndsAt sql.NullTime
 	row := r.db.QueryRow(
-		`SELECT id, username, password_hash, display_name, photo_path, created_at FROM users WHERE id = ?`,
+		`SELECT id, username, password_hash, display_name, photo_path, account_type, subscription_status, subscription_ends_at, created_at FROM users WHERE id = ?`,
 		id,
 	)
 
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.DisplayName, &photoPath, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.DisplayName, &photoPath, &u.AccountType, &u.SubscriptionStatus, &subscriptionEndsAt, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
@@ -69,6 +72,7 @@ func (r *UserRepository) GetByID(id int64) (*models.User, error) {
 		return nil, err
 	}
 	u.PhotoPath = photoPath.String
+	if subscriptionEndsAt.Valid { u.SubscriptionEndsAt = &subscriptionEndsAt.Time }
 	return &u, nil
 }
 
@@ -85,4 +89,10 @@ func (r *UserRepository) UpdateDisplayName(userID int64, displayName string) err
 func (r *UserRepository) UpdatePasswordHash(userID int64, newHash string) error {
 	_, err := r.db.Exec(`UPDATE users SET password_hash = ? WHERE id = ?`, newHash, userID)
 	return err
+}
+
+func (r *UserRepository) HasActiveSellerSubscription(userID int64) (bool, error) {
+	var active int
+	err := r.db.QueryRow(`SELECT CASE WHEN account_type = 'seller' AND subscription_status = 'active' AND (subscription_ends_at IS NULL OR subscription_ends_at > CURRENT_TIMESTAMP) THEN 1 ELSE 0 END FROM users WHERE id = ?`, userID).Scan(&active)
+	return active == 1, err
 }
