@@ -7,18 +7,20 @@ import (
 	"strconv"
 
 	"crdledger/internal/middleware"
+	"crdledger/internal/repository"
 	"crdledger/internal/service"
 )
 
 type OrderHandler struct {
+	users        *repository.UserRepository
 	transactions *service.TransactionService
 	photos       *service.PhotoService
 	admin        *AdminChecker
 	templates    *template.Template
 }
 
-func NewOrderHandler(transactions *service.TransactionService, photos *service.PhotoService, admin *AdminChecker, templates *template.Template) *OrderHandler {
-	return &OrderHandler{transactions: transactions, photos: photos, admin: admin, templates: templates}
+func NewOrderHandler(users *repository.UserRepository, transactions *service.TransactionService, photos *service.PhotoService, admin *AdminChecker, templates *template.Template) *OrderHandler {
+	return &OrderHandler{users: users, transactions: transactions, photos: photos, admin: admin, templates: templates}
 }
 
 // OrderFormData backs the "order_form" partial — the mirror image of
@@ -41,8 +43,11 @@ type OrderFormData struct {
 // buyer's response today.
 func (h *OrderHandler) NewOrderPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
+		userID, ok := middleware.UserIDFromContext(r); if !ok { http.Redirect(w,r,"/login",http.StatusSeeOther); return }
+		user, err := h.users.GetByID(userID); if err != nil { http.Error(w,"failed to load user",http.StatusInternalServerError); return }
 		h.templates.ExecuteTemplate(w, "add_order.html", OrderFormData{
 			CSRFToken: middleware.CSRFTokenFromContext(r),
+			PhotoPath: user.PhotoPath,
 			IsAdmin:   h.admin.IsAdmin(r),
 		})
 		return
