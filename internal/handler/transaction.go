@@ -7,10 +7,12 @@ import (
 	"strconv"
 
 	"crdledger/internal/middleware"
+	"crdledger/internal/repository"
 	"crdledger/internal/service"
 )
 
 type TransactionHandler struct {
+	users        *repository.UserRepository
 	transactions *service.TransactionService
 	balances     *service.BalanceService
 	photos       *service.PhotoService
@@ -18,8 +20,8 @@ type TransactionHandler struct {
 	templates    *template.Template
 }
 
-func NewTransactionHandler(transactions *service.TransactionService, balances *service.BalanceService, photos *service.PhotoService, admin *AdminChecker, templates *template.Template) *TransactionHandler {
-	return &TransactionHandler{transactions: transactions, balances: balances, photos: photos, admin: admin, templates: templates}
+func NewTransactionHandler(users *repository.UserRepository, transactions *service.TransactionService, balances *service.BalanceService, photos *service.PhotoService, admin *AdminChecker, templates *template.Template) *TransactionHandler {
+	return &TransactionHandler{users: users, transactions: transactions, balances: balances, photos: photos, admin: admin, templates: templates}
 }
 
 // RecordFormData backs the "record_form" partial — the form fields are
@@ -42,8 +44,10 @@ func (h *TransactionHandler) RecordPage(w http.ResponseWriter, r *http.Request) 
 	if r.Method == http.MethodGet {
 		userID, ok := middleware.UserIDFromContext(r)
 		if !ok { http.Redirect(w, r, "/login", http.StatusSeeOther); return }
+		user, err := h.users.GetByID(userID); if err != nil { http.Error(w,"failed to load user",http.StatusInternalServerError); return }
 		h.templates.ExecuteTemplate(w, "record.html", RecordFormData{
 			UserID: userID,
+			PhotoPath: user.PhotoPath,
 			CSRFToken: middleware.CSRFTokenFromContext(r),
 			IsAdmin:   h.admin.IsAdmin(r),
 		})
