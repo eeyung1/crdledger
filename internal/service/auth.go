@@ -22,8 +22,8 @@ func NewAuthService(users *repository.UserRepository) *AuthService {
 	return &AuthService{users: users}
 }
 
-func (s *AuthService) Register(username, password, displayName, accountType string) (*models.User, error) {
-	if username == "" || password == "" || displayName == "" || (accountType != "buyer" && accountType != "seller") {
+func (s *AuthService) Register(username, password, displayName, accountType, subscriptionPlan string) (*models.User, error) {
+	if username == "" || password == "" || displayName == "" || (accountType != "buyer" && accountType != "seller") || (accountType == "seller" && subscriptionPlan != "monthly" && subscriptionPlan != "yearly") {
 		return nil, ErrInvalidInput
 	}
 
@@ -46,6 +46,7 @@ func (s *AuthService) Register(username, password, displayName, accountType stri
 		DisplayName:  displayName,
 		AccountType: accountType,
 		SubscriptionStatus: func() string { if accountType == "buyer" { return "not_required" }; return "pending" }(),
+		SubscriptionPlan: func() string { if accountType == "seller" { return subscriptionPlan }; return "" }(),
 	}
 
 	if err := s.users.Create(user); err != nil {
