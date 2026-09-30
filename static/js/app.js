@@ -121,22 +121,68 @@
 		if (label) label.textContent = e.target.files && e.target.files[0] ? e.target.files[0].name : 'No photo selected';
 	});
 
-	// ---- install prompt (Android/desktop Chrome) ----
+	// ---- PWA install invitation ----
 	var deferredPrompt = null;
+	var installCard = null;
+
+	function isStandalone() {
+		return window.matchMedia('(display-mode: standalone)').matches ||
+			window.navigator.standalone === true;
+	}
+
+	function isIOS() {
+		return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+	}
+
+	function removeInstallCard() {
+		if (installCard) installCard.remove();
+		installCard = null;
+	}
+
+	function showInstallCard(mode) {
+		if (isStandalone() || installCard) return;
+		installCard = document.createElement('section');
+		installCard.className = 'pwa-install-card surface';
+		installCard.setAttribute('role', 'dialog');
+		installCard.setAttribute('aria-label', 'Install CRDLedger');
+		var copy = mode === 'ios'
+			? 'Install CRDLedger for faster access and offline use. Tap Share, then Add to Home Screen.'
+			: 'Install CRDLedger on this device for faster access and offline use.';
+		installCard.innerHTML =
+			'<div class="pwa-install-copy"><strong>Install CRDLedger</strong><span>' + copy + '</span></div>' +
+			'<div class="pwa-install-actions">' +
+			(mode === 'native' ? '<button type="button" class="btn btn-primary" data-pwa-install>Install</button>' : '') +
+			'<button type="button" class="btn btn-ghost" data-pwa-dismiss aria-label="Dismiss install prompt">Not now</button>' +
+			'</div>';
+		document.body.appendChild(installCard);
+	}
+
 	window.addEventListener('beforeinstallprompt', function (e) {
 		e.preventDefault();
 		deferredPrompt = e;
-		var btn = document.getElementById('install-app-btn');
-		if (btn) btn.hidden = false;
+		showInstallCard('native');
+	});
+
+	window.addEventListener('load', function () {
+		if (!isStandalone() && isIOS()) showInstallCard('ios');
+	});
+
+	window.addEventListener('appinstalled', function () {
+		deferredPrompt = null;
+		removeInstallCard();
 	});
 
 	document.addEventListener('click', function (e) {
-		var btn = e.target.closest && e.target.closest('#install-app-btn');
+		if (e.target.closest && e.target.closest('[data-pwa-dismiss]')) {
+			removeInstallCard();
+			return;
+		}
+		var btn = e.target.closest && e.target.closest('[data-pwa-install]');
 		if (!btn || !deferredPrompt) return;
 		deferredPrompt.prompt();
 		deferredPrompt.userChoice.finally(function () {
 			deferredPrompt = null;
-			btn.hidden = true;
+			removeInstallCard();
 		});
 	});
 })();
