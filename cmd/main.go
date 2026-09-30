@@ -138,6 +138,7 @@ func main() {
 		}
 	}
 	mux.HandleFunc("/transactions/new", csrf(sessions.RequireAuth(sellerOnly(transactionHandler.RecordPage))))
+	mux.HandleFunc("/api/sync/csrf", csrf(sessions.RequireAuth(sellerOnly(syncHandler.CSRFToken))))
 	mux.HandleFunc("/api/sync/transactions", csrf(sessions.RequireAuth(sellerOnly(syncHandler.CreateTransaction))))
 	mux.HandleFunc("/subscription/checkout", csrf(sessions.RequireAuth(subscriptionHandler.Checkout)))
 	mux.HandleFunc("/subscription/callback", sessions.RequireAuth(subscriptionHandler.Callback))
