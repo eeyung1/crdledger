@@ -181,6 +181,9 @@ func createTables(db *sql.DB) error {
 		password_hash TEXT NOT NULL,
 		display_name TEXT NOT NULL,
 		photo_path TEXT,
+		account_type TEXT NOT NULL DEFAULT 'buyer',
+		subscription_status TEXT NOT NULL DEFAULT 'not_required',
+		subscription_ends_at DATETIME,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	);`
 
@@ -208,6 +211,16 @@ func createTables(db *sql.DB) error {
 	}
 	if _, err := db.Exec(transactionsTable); err != nil {
 		return err
+	}
+
+	// Account roles and seller subscription state. Existing accounts remain
+	// buyers by default; seller access is granted only after activation.
+	for _, migration := range []string{
+		`ALTER TABLE users ADD COLUMN account_type TEXT NOT NULL DEFAULT 'buyer'`,
+		`ALTER TABLE users ADD COLUMN subscription_status TEXT NOT NULL DEFAULT 'not_required'`,
+		`ALTER TABLE users ADD COLUMN subscription_ends_at DATETIME`,
+	} {
+		if _, err := db.Exec(migration); err != nil && !strings.Contains(err.Error(), "duplicate column") { return err }
 	}
 
 	// Defensive migration for databases created before receipts existed.
