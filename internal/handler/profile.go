@@ -36,6 +36,12 @@ func (h *ProfileHandler) EditProfilePage(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	payments, err := h.users.SubscriptionPaymentsForUser(userID)
+	if err != nil {
+		http.Error(w, "failed to load payment history", http.StatusInternalServerError)
+		return
+	}
+
 	sellerActive := user.AccountType == "seller" && user.SubscriptionStatus == "active" && (user.SubscriptionEndsAt == nil || user.SubscriptionEndsAt.After(time.Now()))
 	var subscriptionDaysRemaining int
 	if sellerActive && user.SubscriptionEndsAt != nil {
@@ -54,6 +60,7 @@ func (h *ProfileHandler) EditProfilePage(w http.ResponseWriter, r *http.Request)
 		"SubscriptionDaysRemaining": subscriptionDaysRemaining,
 		"SubscriptionPlan": user.SubscriptionPlan,
 		"SubscriptionEndsAt": user.SubscriptionEndsAt,
+		"SubscriptionPayments": payments,
 		"NameError":   r.URL.Query().Get("name_error"),
 		"UpgradeError": r.URL.Query().Get("upgrade_error"),
 		"CSRFToken":   middleware.CSRFTokenFromContext(r),
