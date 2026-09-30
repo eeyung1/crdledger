@@ -64,28 +64,42 @@
 		});
 	});
 
-	// ---- mark-paid payment date prompt ----
+	// ---- mark-paid payment date modal ----
+	var paymentDialog = document.getElementById('payment-date-dialog');
+	var paymentDatePicker = document.getElementById('payment-date-picker');
+	var pendingPaymentForm = null;
+
 	document.addEventListener('click', function (e) {
 		var btn = e.target.closest && e.target.closest('[data-mark-paid]');
-		if (!btn) return;
-		var form = btn.closest('form');
-		if (!form) return;
-		var paidDate = form.querySelector('input[name="paid_date"]');
-		if (!paidDate) return;
+		if (!btn || !paymentDialog || !paymentDatePicker) return;
+		pendingPaymentForm = btn.closest('form');
+		if (!pendingPaymentForm) return;
+		paymentDatePicker.value = new Date().toISOString().slice(0, 10);
+		paymentDialog.showModal();
+		if (typeof paymentDatePicker.showPicker === 'function') {
+			try { paymentDatePicker.showPicker(); } catch (_) {}
+		}
+	});
 
-		var selected = window.prompt('Date of payment (YYYY-MM-DD):', new Date().toISOString().slice(0, 10));
-		if (selected === null) return;
-		selected = selected.trim();
-		if (!/^\d{4}-\d{2}-\d{2}$/.test(selected)) {
-			toast('Enter the payment date as YYYY-MM-DD.');
+	document.addEventListener('click', function (e) {
+		if (e.target.closest && e.target.closest('[data-payment-cancel]')) {
+			if (paymentDialog) paymentDialog.close();
+			pendingPaymentForm = null;
 			return;
 		}
-		paidDate.value = selected;
-		if (typeof form.requestSubmit === 'function') {
-			form.requestSubmit();
-		} else {
-			form.submit();
+		if (!(e.target.closest && e.target.closest('[data-payment-confirm]'))) return;
+		if (!pendingPaymentForm || !paymentDatePicker || !paymentDatePicker.value) {
+			toast('Choose a payment date.');
+			return;
 		}
+		var paidDate = pendingPaymentForm.querySelector('input[name="paid_date"]');
+		if (!paidDate) return;
+		paidDate.value = paymentDatePicker.value;
+		var form = pendingPaymentForm;
+		pendingPaymentForm = null;
+		if (paymentDialog) paymentDialog.close();
+		if (typeof form.requestSubmit === 'function') form.requestSubmit();
+		else form.submit();
 	});
 
 	// ---- install prompt (Android/desktop Chrome) ----
