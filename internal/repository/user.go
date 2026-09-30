@@ -19,8 +19,8 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 
 func (r *UserRepository) Create(user *models.User) error {
 	result, err := r.db.Exec(
-		`INSERT INTO users (username, password_hash, display_name, account_type, subscription_status, subscription_plan) VALUES (?, ?, ?, ?, ?, ?)`,
-		user.Username, user.PasswordHash, user.DisplayName, user.AccountType, user.SubscriptionStatus, user.SubscriptionPlan,
+		`INSERT INTO users (username, email, password_hash, display_name, account_type, subscription_status, subscription_plan) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		user.Username, user.Email, user.PasswordHash, user.DisplayName, user.AccountType, user.SubscriptionStatus, user.SubscriptionPlan,
 	)
 	if err != nil {
 		return err
@@ -39,11 +39,11 @@ func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
 	var photoPath sql.NullString
 	var subscriptionEndsAt sql.NullTime
 	row := r.db.QueryRow(
-		`SELECT id, username, password_hash, display_name, photo_path, account_type, subscription_status, subscription_plan, subscription_ends_at, created_at FROM users WHERE username = ?`,
+		`SELECT id, username, email, password_hash, display_name, photo_path, account_type, subscription_status, subscription_plan, subscription_ends_at, created_at FROM users WHERE username = ?`,
 		username,
 	)
 
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.DisplayName, &photoPath, &u.AccountType, &u.SubscriptionStatus, &u.SubscriptionPlan, &subscriptionEndsAt, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.DisplayName, &photoPath, &u.AccountType, &u.SubscriptionStatus, &u.SubscriptionPlan, &subscriptionEndsAt, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
@@ -60,11 +60,11 @@ func (r *UserRepository) GetByID(id int64) (*models.User, error) {
 	var photoPath sql.NullString
 	var subscriptionEndsAt sql.NullTime
 	row := r.db.QueryRow(
-		`SELECT id, username, password_hash, display_name, photo_path, account_type, subscription_status, subscription_plan, subscription_ends_at, created_at FROM users WHERE id = ?`,
+		`SELECT id, username, email, password_hash, display_name, photo_path, account_type, subscription_status, subscription_plan, subscription_ends_at, created_at FROM users WHERE id = ?`,
 		id,
 	)
 
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.DisplayName, &photoPath, &u.AccountType, &u.SubscriptionStatus, &u.SubscriptionPlan, &subscriptionEndsAt, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.DisplayName, &photoPath, &u.AccountType, &u.SubscriptionStatus, &u.SubscriptionPlan, &subscriptionEndsAt, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
@@ -95,4 +95,20 @@ func (r *UserRepository) HasActiveSellerSubscription(userID int64) (bool, error)
 	var active int
 	err := r.db.QueryRow(`SELECT CASE WHEN account_type = 'seller' AND subscription_status = 'active' AND (subscription_ends_at IS NULL OR subscription_ends_at > CURRENT_TIMESTAMP) THEN 1 ELSE 0 END FROM users WHERE id = ?`, userID).Scan(&active)
 	return active == 1, err
+}
+
+func (r *UserRepository) CreateSubscriptionPayment(userID int64, reference, plan string) error {
+	_, err := r.db.Exec(`INSERT INTO subscription_payments (user_id, reference, plan, status) VALUES (?, ?, ?, 'pending')`, userID, reference, plan); return err
+}
+func (r *UserRepository) PendingSubscriptionPayment(userID int64, reference string) (string,error) {
+	var plan string; err := r.db.QueryRow(`SELECT plan FROM subscription_payments WHERE user_id=? AND reference=? AND status='pending'`,userID,reference).Scan(&plan); return plan,err
+}
+func (r *UserRepository) ActivateSellerSubscription(userID int64, reference, plan string) error {
+	tx, err := r.db.Begin(); if err != nil { return err }; defer tx.Rollback()
+	var status string; if err := tx.QueryRow(`SELECT status FROM subscription_payments WHERE user_id=? AND reference=?`,userID,reference).Scan(&status); err != nil { return err }
+	if status == "completed" { return tx.Commit() }
+	modifier := "+1 month"; if plan == "yearly" { modifier = "+1 year" }
+	if _,err=tx.Exec(`UPDATE users SET subscription_status='active', subscription_ends_at=datetime(CASE WHEN subscription_ends_at > CURRENT_TIMESTAMP THEN subscription_ends_at ELSE CURRENT_TIMESTAMP END, ?) WHERE id=? AND account_type='seller'`,modifier,userID); err != nil{return err}
+	if _,err=tx.Exec(`UPDATE subscription_payments SET status='completed', completed_at=CURRENT_TIMESTAMP WHERE user_id=? AND reference=?`,userID,reference);err!=nil{return err}
+	return tx.Commit()
 }
