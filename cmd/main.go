@@ -125,10 +125,20 @@ func main() {
 	mux.HandleFunc("/transactions", csrf(sessions.RequireAuth(transactionsMenuHandler.Menu)))
 	mux.HandleFunc("/transactions/creditors", csrf(sessions.RequireAuth(transactionsListHandler.Creditors)))
 	mux.HandleFunc("/transactions/debtors", csrf(sessions.RequireAuth(transactionsListHandler.Debtors)))
-	mux.HandleFunc("/transactions/new", csrf(sessions.RequireAuth(transactionHandler.RecordPage)))
-	mux.HandleFunc("/api/sync/transactions", csrf(sessions.RequireAuth(syncHandler.CreateTransaction)))
+	sellerOnly := func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			userID, ok := middleware.UserIDFromContext(r)
+			if !ok { http.Redirect(w, r, "/login", http.StatusSeeOther); return }
+			active, err := userRepo.HasActiveSellerSubscription(userID)
+			if err != nil { http.Error(w, "failed to verify seller access", http.StatusInternalServerError); return }
+			if !active { http.Error(w, "Seller subscription required.", http.StatusForbidden); return }
+			next(w, r)
+		}
+	}
+	mux.HandleFunc("/transactions/new", csrf(sessions.RequireAuth(sellerOnly(transactionHandler.RecordPage))))
+	mux.HandleFunc("/api/sync/transactions", csrf(sessions.RequireAuth(sellerOnly(syncHandler.CreateTransaction))))
 	mux.HandleFunc("/orders/new", csrf(sessions.RequireAuth(orderHandler.NewOrderPage)))
-	mux.HandleFunc("/transactions/mark-paid", csrf(sessions.RequireAuth(transactionHandler.MarkPaid)))
+	mux.HandleFunc("/transactions/mark-paid", csrf(sessions.RequireAuth(sellerOnly(transactionHandler.MarkPaid))))
 	mux.HandleFunc("/transactions/confirm", csrf(sessions.RequireAuth(transactionHandler.Confirm)))
 	mux.HandleFunc("/transactions/reject", csrf(sessions.RequireAuth(transactionHandler.Reject)))
 	mux.HandleFunc("/profile/edit", csrf(sessions.RequireAuth(profileHandler.EditProfilePage)))
