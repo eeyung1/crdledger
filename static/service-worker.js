@@ -6,7 +6,8 @@
 //    offline-ledger.js from IndexedDB on supported ledger pages.
 //  - Static assets (css/js/icons/fonts): cache-first, since they're
 //    versioned by CACHE_NAME and change only on deploy.
-const CACHE_NAME = 'crdledger-static-v6';
+const CACHE_NAME = 'crdledger-static-v7';
+const PAGE_CACHE_NAME = 'crdledger-pages-v1';
 const OFFLINE_URL = '/static/offline.html';
 
 const PRECACHE_URLS = [
@@ -34,7 +35,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
 	event.waitUntil(
 		caches.keys().then((keys) =>
-			Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+			Promise.all(keys.filter((k) => k !== CACHE_NAME && k !== PAGE_CACHE_NAME).map((k) => caches.delete(k)))
 		).then(() => self.clients.claim())
 	);
 });
@@ -45,10 +46,26 @@ self.addEventListener('fetch', (event) => {
 
 	const url = new URL(req.url);
 
-	// Navigations (actual pages): network-first, offline fallback.
+	// Navigations (actual pages): network-first. Successful same-origin HTML
+	// pages are cached only after the signed-in user visits them. This avoids
+	// globally precaching personalized documents while still allowing a cold
+	// offline restart. When offline, prefer the exact previously visited page.
 	if (req.mode === 'navigate') {
 		event.respondWith(
-			fetch(req).catch(() => caches.match(OFFLINE_URL))
+			fetch(req).then((res) => {
+				if (url.origin === self.location.origin && res.ok && res.type === 'basic') {
+					const contentType = res.headers.get('content-type') || '';
+					if (contentType.includes('text/html')) {
+						const copy = res.clone();
+						caches.open(PAGE_CACHE_NAME).then((cache) => cache.put(req, copy));
+					}
+				}
+				return res;
+			}).catch(() =>
+				caches.open(PAGE_CACHE_NAME)
+					.then((cache) => cache.match(req))
+					.then((cached) => cached || caches.match(OFFLINE_URL))
+			)
 		);
 		return;
 	}
