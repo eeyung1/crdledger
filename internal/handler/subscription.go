@@ -1,7 +1,12 @@
 package handler
 
 import (
+	"crypto/hmac"
+	"crypto/sha512"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 	"html/template"
 	"net/http"
 	"net/mail"
@@ -13,8 +18,8 @@ import (
 	"crdledger/internal/service"
 )
 
-type SubscriptionHandler struct { users *repository.UserRepository; paystack *service.PaystackService; templates *template.Template }
-func NewSubscriptionHandler(users *repository.UserRepository, paystack *service.PaystackService, templates *template.Template) *SubscriptionHandler { return &SubscriptionHandler{users:users,paystack:paystack,templates:templates} }
+type SubscriptionHandler struct { users *repository.UserRepository; paystack *service.PaystackService; templates *template.Template; secretKey string }
+func NewSubscriptionHandler(users *repository.UserRepository, paystack *service.PaystackService, templates *template.Template, secretKey string) *SubscriptionHandler { return &SubscriptionHandler{users:users,paystack:paystack,templates:templates,secretKey:secretKey} }
 
 func (h *SubscriptionHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost { http.Error(w,"method not allowed",http.StatusMethodNotAllowed); return }
@@ -52,4 +57,40 @@ func (h *SubscriptionHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	if err := h.paystack.Verify(ref,plan); err != nil { http.Error(w,"Payment could not be verified.",http.StatusBadRequest); return }
 	if err := h.users.ActivateSellerSubscription(id,ref,plan); err != nil { http.Error(w,"Could not activate subscription.",http.StatusInternalServerError); return }
 	http.Redirect(w,r,"/dashboard?subscription=active",http.StatusSeeOther)
+}
+
+
+type paystackWebhookEvent struct {
+	Event string `json:"event"`
+	Data struct {
+		Reference string `json:"reference"`
+	} `json:"data"`
+}
+
+func (h *SubscriptionHandler) Webhook(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost { http.Error(w, "method not allowed", http.StatusMethodNotAllowed); return }
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil { http.Error(w, "invalid body", http.StatusBadRequest); return }
+
+	mac := hmac.New(sha512.New, []byte(h.secretKey))
+	_, _ = mac.Write(body)
+	expected := hex.EncodeToString(mac.Sum(nil))
+	signature := r.Header.Get("x-paystack-signature")
+	if signature == "" || !hmac.Equal([]byte(expected), []byte(signature)) {
+		http.Error(w, "invalid signature", http.StatusUnauthorized)
+		return
+	}
+
+	var event paystackWebhookEvent
+	if err := json.Unmarshal(body, &event); err != nil { http.Error(w, "invalid event", http.StatusBadRequest); return }
+	if event.Event != "charge.success" || event.Data.Reference == "" { w.WriteHeader(http.StatusOK); return }
+
+	userID, plan, err := h.users.SubscriptionPaymentByReference(event.Data.Reference)
+	if err != nil { w.WriteHeader(http.StatusOK); return }
+
+	// Do not trust webhook fields alone. Verify the transaction directly
+	// with Paystack, including successful status, NGN currency and exact plan amount.
+	if err := h.paystack.Verify(event.Data.Reference, plan); err != nil { http.Error(w, "verification failed", http.StatusBadGateway); return }
+	if err := h.users.ActivateSellerSubscription(userID, event.Data.Reference, plan); err != nil { http.Error(w, "activation failed", http.StatusInternalServerError); return }
+	w.WriteHeader(http.StatusOK)
 }
