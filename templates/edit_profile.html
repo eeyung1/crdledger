@@ -31,6 +31,24 @@
 	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.NameError}}</div>
 	{{end}}
 
+	{{if not .IsSeller}}
+	<section class="seller-activation surface" aria-label="Upgrade to seller">
+		<div>
+			<p class="text-caption">Seller tools</p>
+			<h2 class="text-title-2">Upgrade to Seller</h2>
+			<p class="text-footnote">Accept orders, record credit transactions, and unlock both Creditors and Debtors.</p>
+		</div>
+		<form method="POST" action="/subscription/checkout" class="stack">
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+			<label class="plan-card"><input type="radio" name="subscription_plan" value="monthly" required> <span><strong>Monthly</strong><br>₦2,000 / month</span></label>
+			<label class="plan-card"><input type="radio" name="subscription_plan" value="yearly" required> <span><strong>Yearly</strong><br>₦15,000 / year · Save ₦9,000</span></label>
+			<button type="submit" class="btn btn-primary">Pay with Paystack & upgrade</button>
+		</form>
+	</section>
+	{{else if .SellerActive}}
+	<div class="banner is-success" role="status">Seller account active{{if .SubscriptionEndsAt}} until {{.SubscriptionEndsAt.Format "02 Jan 2006"}}{{end}}.</div>
+	{{end}}
+
 	<button type="button" class="btn btn-primary profile-edit-toggle" data-profile-edit-toggle aria-expanded="false" aria-controls="profile-edit-panel">Edit profile</button>
 
 	<section id="profile-edit-panel" class="profile-edit-panel surface" hidden>
