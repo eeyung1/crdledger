@@ -17,12 +17,20 @@ func NewSubscriptionHandler(users *repository.UserRepository, paystack *service.
 func (h *SubscriptionHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost { http.Error(w,"method not allowed",http.StatusMethodNotAllowed); return }
 	id, ok := middleware.UserIDFromContext(r); if !ok { http.Redirect(w,r,"/login",http.StatusSeeOther); return }
-	u, err := h.users.GetByID(id); if err != nil || u.AccountType != "seller" { http.Error(w,"seller account required",http.StatusForbidden); return }
+	u, err := h.users.GetByID(id); if err != nil { http.Error(w,"failed to load account",http.StatusInternalServerError); return }
+	plan := u.SubscriptionPlan
+	if u.AccountType == "buyer" {
+		plan = r.FormValue("subscription_plan")
+		if plan != "monthly" && plan != "yearly" { http.Error(w,"Choose a monthly or yearly seller plan.",http.StatusBadRequest); return }
+	} else if plan != "monthly" && plan != "yearly" {
+		plan = r.FormValue("subscription_plan")
+		if plan != "monthly" && plan != "yearly" { http.Error(w,"Choose a monthly or yearly seller plan.",http.StatusBadRequest); return }
+	}
 	if u.Email == "" { http.Error(w,"Add an email address before paying for a seller subscription.",http.StatusBadRequest); return }
 	ref := fmt.Sprintf("crdledger-%d-%d", id, time.Now().UnixNano())
 	callback := "https://" + r.Host + "/subscription/callback"
-	checkout, err := h.paystack.Initialize(u.Email,u.SubscriptionPlan,callback,ref); if err != nil { http.Error(w,"Could not start payment. Please try again.",http.StatusBadGateway); return }
-	if err := h.users.CreateSubscriptionPayment(id,ref,u.SubscriptionPlan); err != nil { http.Error(w,"Could not save payment.",http.StatusInternalServerError); return }
+	checkout, err := h.paystack.Initialize(u.Email,plan,callback,ref); if err != nil { http.Error(w,"Could not start payment. Please try again.",http.StatusBadGateway); return }
+	if err := h.users.CreateSubscriptionPayment(id,ref,plan); err != nil { http.Error(w,"Could not save payment.",http.StatusInternalServerError); return }
 	http.Redirect(w,r,checkout,http.StatusSeeOther)
 }
 
