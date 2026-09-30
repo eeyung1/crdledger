@@ -140,7 +140,7 @@
       });
       return transactions.reduce(function (chain, operation) {
         return chain.then(function () {
-          if (operation.status === 'sync_failed') return;
+          if (operation.status === 'sync_failed' && !/status 404/i.test(operation.syncError || '')) return;
           return syncOperation(operation).catch(function (err) {
             if (!err.permanent) throw err;
           });
