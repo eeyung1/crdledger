@@ -6,7 +6,7 @@
 //    offline-ledger.js from IndexedDB on supported ledger pages.
 //  - Static assets (css/js/icons/fonts): cache-first, since they're
 //    versioned by CACHE_NAME and change only on deploy.
-const CACHE_NAME = 'crdledger-static-v7';
+const CACHE_NAME = 'crdledger-static-v8';
 const PAGE_CACHE_NAME = 'crdledger-pages-v1';
 const OFFLINE_URL = '/static/offline.html';
 const OFFLINE_APP_ROUTES = new Set([
@@ -59,7 +59,11 @@ self.addEventListener('fetch', (event) => {
 	// offline restart. When offline, prefer the exact previously visited page.
 	if (req.mode === 'navigate') {
 		event.respondWith(
-			fetch(req).then((res) => {
+			caches.open(PAGE_CACHE_NAME).then((pageCache) => {
+				if (!self.navigator.onLine && url.origin === self.location.origin && OFFLINE_APP_ROUTES.has(url.pathname)) {
+					return pageCache.match(req).then((cached) => cached || caches.match(OFFLINE_URL));
+				}
+				return fetch(req).then((res) => {
 				if (url.origin === self.location.origin && OFFLINE_APP_ROUTES.has(url.pathname) && res.ok && res.type === 'basic') {
 					const contentType = res.headers.get('content-type') || '';
 					if (contentType.includes('text/html')) {
@@ -67,12 +71,11 @@ self.addEventListener('fetch', (event) => {
 						caches.open(PAGE_CACHE_NAME).then((cache) => cache.put(req, copy));
 					}
 				}
-				return res;
-			}).catch(() =>
-				caches.open(PAGE_CACHE_NAME)
-					.then((cache) => cache.match(req))
-					.then((cached) => cached || caches.match(OFFLINE_URL))
-			)
+					return res;
+				}).catch(() =>
+					pageCache.match(req).then((cached) => cached || caches.match(OFFLINE_URL))
+				);
+			})
 		);
 		return;
 	}
