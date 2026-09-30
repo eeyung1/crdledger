@@ -8,5 +8,8 @@ type User struct {
 	PasswordHash string
 	DisplayName  string
 	PhotoPath    string
+	AccountType  string
+	SubscriptionStatus string
+	SubscriptionEndsAt *time.Time
 	CreatedAt    time.Time
 }
