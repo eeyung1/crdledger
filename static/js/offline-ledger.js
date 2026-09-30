@@ -76,8 +76,9 @@
 
   function refreshQueueStatus() {
     return store.listOutbox().then(function (operations) {
+      var userKey = pageUser();
       var transactions = operations.filter(function (operation) {
-        return operation.type === 'create_transaction';
+        return operation.type === 'create_transaction' && operation.userKey === userKey;
       });
       var failed = transactions.filter(function (operation) { return operation.status === 'sync_failed'; });
       var syncing = transactions.filter(function (operation) { return operation.status === 'syncing'; });
