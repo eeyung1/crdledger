@@ -102,6 +102,25 @@
 		else form.submit();
 	});
 
+	// ---- profile editing ----
+	document.addEventListener('click', function (e) {
+		var open = e.target.closest && e.target.closest('[data-profile-edit-toggle]');
+		var close = e.target.closest && e.target.closest('[data-profile-edit-close]');
+		if (!open && !close) return;
+		var panel = document.getElementById('profile-edit-panel');
+		var toggle = document.querySelector('[data-profile-edit-toggle]');
+		if (!panel || !toggle) return;
+		var shouldOpen = !!open;
+		panel.hidden = !shouldOpen;
+		toggle.hidden = shouldOpen;
+		toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+	});
+	document.addEventListener('change', function (e) {
+		if (!e.target.matches || !e.target.matches('[data-profile-photo-input]')) return;
+		var label = document.querySelector('[data-profile-photo-name]');
+		if (label) label.textContent = e.target.files && e.target.files[0] ? e.target.files[0].name : 'No photo selected';
+	});
+
 	// ---- install prompt (Android/desktop Chrome) ----
 	var deferredPrompt = null;
 	window.addEventListener('beforeinstallprompt', function (e) {
