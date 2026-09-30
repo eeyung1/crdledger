@@ -193,6 +193,7 @@ func createTables(db *sql.DB) error {
 		photo_path TEXT,
 		account_type TEXT NOT NULL DEFAULT 'buyer',
 		subscription_status TEXT NOT NULL DEFAULT 'not_required',
+		subscription_plan TEXT NOT NULL DEFAULT '',
 		subscription_ends_at DATETIME,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	);`
@@ -228,6 +229,7 @@ func createTables(db *sql.DB) error {
 	for _, migration := range []string{
 		`ALTER TABLE users ADD COLUMN account_type TEXT NOT NULL DEFAULT 'buyer'`,
 		`ALTER TABLE users ADD COLUMN subscription_status TEXT NOT NULL DEFAULT 'not_required'`,
+		`ALTER TABLE users ADD COLUMN subscription_plan TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE users ADD COLUMN subscription_ends_at DATETIME`,
 	} {
 		if _, err := db.Exec(migration); err != nil && !strings.Contains(err.Error(), "duplicate column") { return err }
