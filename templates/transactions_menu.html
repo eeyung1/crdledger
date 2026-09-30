@@ -13,10 +13,10 @@
 	<h1 class="text-title-1 page-title">Transactions</h1>
 
 	<div class="balance-summary">
-		<a href="/transactions/creditors" class="balance-card surface receivable">
+		{{if .IsSeller}}<a href="/transactions/creditors" class="balance-card surface receivable">
 			<div class="label">{{template "icon_receivable"}} Creditors</div>
 			<div class="sub-value">People who owe you money</div>
-		</a>
+		</a>{{end}}
 		<a href="/transactions/debtors" class="balance-card surface owed">
 			<div class="label">{{template "icon_owed"}} Debtors</div>
 			<div class="sub-value">People you owe money</div>
