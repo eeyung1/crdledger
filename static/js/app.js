@@ -121,6 +121,24 @@
 		if (label) label.textContent = e.target.files && e.target.files[0] ? e.target.files[0].name : 'No photo selected';
 	});
 
+	// ---- registration account type / seller plan ----
+	var sellerPlans = document.querySelector('[data-seller-plans]');
+	function updateSellerPlans() {
+		if (!sellerPlans) return;
+		var selected = document.querySelector('input[name="account_type"]:checked');
+		var isSeller = selected && selected.value === 'seller';
+		sellerPlans.hidden = !isSeller;
+		sellerPlans.setAttribute('aria-hidden', isSeller ? 'false' : 'true');
+		sellerPlans.querySelectorAll('input[name="subscription_plan"]').forEach(function (input) {
+			input.required = isSeller;
+			if (!isSeller) input.checked = false;
+		});
+	}
+	document.addEventListener('change', function (e) {
+		if (e.target.matches && e.target.matches('input[name="account_type"]')) updateSellerPlans();
+	});
+	updateSellerPlans();
+
 	// ---- PWA install invitation ----
 	var deferredPrompt = null;
 	var installCard = null;
