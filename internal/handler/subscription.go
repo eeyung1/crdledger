@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/mail"
 	"strings"
+	"log/slog"
 	"time"
 
 	"crdledger/internal/middleware"
@@ -43,7 +44,7 @@ func (h *SubscriptionHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	if email == "" { http.Error(w,"Add an email address before paying for a seller subscription.",http.StatusBadRequest); return }
 	ref := fmt.Sprintf("crdledger-%d-%d", id, time.Now().UnixNano())
 	callback := h.appBaseURL + "/subscription/callback"
-	checkout, err := h.paystack.Initialize(email,plan,callback,ref); if err != nil { http.Error(w,"Could not start payment. Please try again.",http.StatusBadGateway); return }
+	checkout, err := h.paystack.Initialize(email,plan,callback,ref); if err != nil { slog.Error("subscription checkout initialization failed","user_id",id,"plan",plan,"error",err); http.Error(w,"Could not start payment. Please try again.",http.StatusBadGateway); return }
 	if err := h.users.CreateSubscriptionPayment(id,ref,plan); err != nil { http.Error(w,"Could not save payment.",http.StatusInternalServerError); return }
 	http.Redirect(w,r,checkout,http.StatusSeeOther)
 }
@@ -59,12 +60,15 @@ func (h *SubscriptionHandler) Callback(w http.ResponseWriter, r *http.Request) {
 		if err := h.paystack.Verify(ref,plan); err != nil {
 			if errors.Is(err, service.ErrPaymentNotSuccessful) || errors.Is(err, service.ErrPaymentAmountMismatch) {
 				_ = h.users.MarkSubscriptionPaymentFailed(id, ref)
+				slog.Warn("subscription payment verification failed","user_id",id,"reference",ref,"plan",plan,"error",err)
 				http.Redirect(w,r,"/profile/edit?payment_error=Payment+was+not+completed.+No+subscription+was+activated.",http.StatusSeeOther)
 				return
 			}
+			slog.Error("subscription payment verification unavailable","user_id",id,"reference",ref,"error",err)
 			http.Error(w,"Payment verification is temporarily unavailable. Please retry from your payment return link.",http.StatusBadGateway); return
 		}
-		if err := h.users.ActivateSellerSubscription(id,ref,plan); err != nil { http.Error(w,"Could not activate subscription.",http.StatusInternalServerError); return }
+		if err := h.users.ActivateSellerSubscription(id,ref,plan); err != nil { slog.Error("subscription activation failed","user_id",id,"reference",ref,"error",err); http.Error(w,"Could not activate subscription.",http.StatusInternalServerError); return }
+		slog.Info("subscription activated","user_id",id,"reference",ref,"plan",plan)
 	}
 	http.Redirect(w,r,"/dashboard?subscription=active",http.StatusSeeOther)
 }
@@ -106,10 +110,13 @@ func (h *SubscriptionHandler) Webhook(w http.ResponseWriter, r *http.Request) {
 		// not retry forever; transient provider/network failures return 502.
 		if errors.Is(err, service.ErrPaymentNotSuccessful) || errors.Is(err, service.ErrPaymentAmountMismatch) {
 			_ = h.users.MarkSubscriptionPaymentFailed(userID, event.Data.Reference)
+			slog.Warn("webhook payment verification rejected","user_id",userID,"reference",event.Data.Reference,"plan",plan,"error",err)
 			w.WriteHeader(http.StatusOK); return
 		}
+		slog.Error("webhook payment verification unavailable","user_id",userID,"reference",event.Data.Reference,"error",err)
 		http.Error(w, "verification temporarily unavailable", http.StatusBadGateway); return
 	}
-	if err := h.users.ActivateSellerSubscription(userID, event.Data.Reference, plan); err != nil { http.Error(w, "activation failed", http.StatusInternalServerError); return }
+	if err := h.users.ActivateSellerSubscription(userID, event.Data.Reference, plan); err != nil { slog.Error("webhook subscription activation failed","user_id",userID,"reference",event.Data.Reference,"error",err); http.Error(w, "activation failed", http.StatusInternalServerError); return }
+	slog.Info("webhook subscription activated","user_id",userID,"reference",event.Data.Reference,"plan",plan)
 	w.WriteHeader(http.StatusOK)
 }
