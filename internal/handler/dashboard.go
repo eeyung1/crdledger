@@ -34,6 +34,7 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]any{
+		"UserID":      userID,
 		"DisplayName": user.DisplayName,
 		"PhotoPath":   user.PhotoPath,
 		"PhotoError":  r.URL.Query().Get("photo_error"),

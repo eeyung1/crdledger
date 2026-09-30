@@ -27,6 +27,7 @@ func NewTransactionHandler(transactions *service.TransactionService, balances *s
 // input, and Success flips on after an HTMX-driven submission so the
 // person can record another transaction without leaving the page.
 type RecordFormData struct {
+	UserID        int64
 	Error         string
 	Success       bool
 	CSRFToken     string
@@ -39,7 +40,10 @@ type RecordFormData struct {
 
 func (h *TransactionHandler) RecordPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
+		userID, ok := middleware.UserIDFromContext(r)
+		if !ok { http.Redirect(w, r, "/login", http.StatusSeeOther); return }
 		h.templates.ExecuteTemplate(w, "record.html", RecordFormData{
+			UserID: userID,
 			CSRFToken: middleware.CSRFTokenFromContext(r),
 			IsAdmin:   h.admin.IsAdmin(r),
 		})
@@ -64,6 +68,7 @@ func (h *TransactionHandler) RecordPage(w http.ResponseWriter, r *http.Request) 
 
 	respondError := func(msg string) {
 		data := RecordFormData{
+			UserID: sellerID,
 			Error:         msg,
 			CSRFToken:     csrfToken,
 			BuyerUsername: buyerUsername,
