@@ -39,6 +39,7 @@ func (h *ProfileHandler) EditProfilePage(w http.ResponseWriter, r *http.Request)
 		"PhotoPath":   user.PhotoPath,
 		"PhotoError":  r.URL.Query().Get("photo_error"),
 		"DisplayName": user.DisplayName,
+		"Username":    user.Username,
 		"NameError":   r.URL.Query().Get("name_error"),
 		"CSRFToken":   middleware.CSRFTokenFromContext(r),
 		"IsAdmin":     h.admin.IsAdmin(r),
