@@ -35,8 +35,9 @@ func (h *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	displayName := r.FormValue("display_name")
+	accountType := r.FormValue("account_type")
 
-	user, err := h.auth.Register(username, password, displayName)
+	user, err := h.auth.Register(username, password, displayName, accountType)
 	if err != nil {
 		var errMsg string
 		switch {
