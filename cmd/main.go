@@ -82,7 +82,7 @@ func main() {
 	photoHandler := handler.NewPhotoHandler(photoService, templates)
 	profileHandler := handler.NewProfileHandler(userRepo, authService, adminChecker, templates)
 	exportHandler := handler.NewExportHandler(balanceService)
-	adminHandler := handler.NewAdminHandler(authService, adminChecker, templates)
+	adminHandler := handler.NewAdminHandler(authService, userRepo, adminChecker, templates)
 	paystackService := service.NewPaystackService(cfg.PaystackSecretKey)
 	subscriptionHandler := handler.NewSubscriptionHandler(userRepo, paystackService, templates, cfg.PaystackSecretKey, cfg.AppBaseURL)
 
@@ -153,6 +153,7 @@ func main() {
 	mux.HandleFunc("/photo/upload", csrf(sessions.RequireAuth(photoHandler.Upload)))
 	mux.HandleFunc("/transactions/export.csv", csrf(sessions.RequireAuth(exportHandler.TransactionsCSV)))
 	mux.HandleFunc("/admin/reset-password", csrf(sessions.RequireAuth(adminHandler.ResetPasswordPage)))
+	mux.HandleFunc("/admin/subscriptions", csrf(sessions.RequireAuth(adminHandler.SubscriptionsPage)))
 
 	var root http.Handler = mux
 	// Keep one production origin. Render health checks stay local, while

@@ -812,3 +812,12 @@ button:disabled, .btn:disabled { opacity: 0.6; cursor: default; transform: none;
 .seller-activation > div { display:grid; gap:var(--space-1); }
 .seller-activation form { flex:0 0 auto; }
 @media (max-width: 560px) { .seller-activation { align-items:stretch; flex-direction:column; } .seller-activation .btn { width:100%; } }
+
+/* admin subscription reporting */
+.admin-table-card { padding: var(--space-4); margin-bottom: var(--space-5); }
+.admin-table-card h2 { margin: var(--space-2) 0 var(--space-4); }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font: var(--text-footnote); }
+.admin-table th, .admin-table td { text-align: left; padding: var(--space-3); border-bottom: 1px solid var(--border); vertical-align: top; white-space: nowrap; }
+.admin-table th { color: var(--text-secondary); font-weight: 600; }
+.admin-table code { font: inherit; font-family: var(--font-mono); }
