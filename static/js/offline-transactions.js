@@ -89,10 +89,24 @@
     });
   }
 
+  function freshCSRFToken(fallback) {
+    return fetch('/api/sync/csrf', {
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store'
+    }).then(function (response) {
+      if (!response.ok) throw new Error('Could not refresh sync session.');
+      return response.json();
+    }).then(function (result) {
+      return result.csrf_token || currentCSRFToken(fallback);
+    });
+  }
+
   function syncOperation(operation) {
     return mark(operation, 'syncing', '').then(function (current) {
+      return freshCSRFToken(current.csrfToken).then(function (csrfToken) {
       var body = new URLSearchParams();
-      body.set('csrf_token', currentCSRFToken(current.csrfToken));
+      body.set('csrf_token', csrfToken);
       body.set('operation_id', current.operationId);
       body.set('buyer_username', current.buyerUsername);
       body.set('amount', current.amount);
@@ -120,6 +134,7 @@
             throw err;
           });
         });
+      });
       }).catch(function (err) {
         if (err && err.permanent) throw err;
         return mark(current, 'pending_sync', err && err.message ? err.message : 'Network unavailable.').then(function () {
