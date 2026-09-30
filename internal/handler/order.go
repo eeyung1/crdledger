@@ -125,6 +125,8 @@ func (h *OrderHandler) NewOrderPage(w http.ResponseWriter, r *http.Request) {
 			respondError("Please enter a description.")
 		case errors.Is(err, service.ErrSellerNotFound):
 			respondError("We couldn't find that username — check the spelling and try again.")
+		case errors.Is(err, service.ErrNotSellerAccount):
+			respondError("You can only add orders to sellers. This username belongs to a buyer account, not a seller account.")
 		case errors.Is(err, service.ErrCannotRecordSelf):
 			respondError("You cannot record a transaction with yourself.")
 		default:
