@@ -6,13 +6,14 @@
 //    offline-ledger.js from IndexedDB on supported ledger pages.
 //  - Static assets (css/js/icons/fonts): cache-first, since they're
 //    versioned by CACHE_NAME and change only on deploy.
-const CACHE_NAME = 'crdledger-static-v15';
+const CACHE_NAME = 'crdledger-static-v16';
 const PAGE_CACHE_NAME = 'crdledger-pages-v1';
 const OFFLINE_URL = '/static/offline.html';
 const OFFLINE_APP_ROUTES = new Set([
 	'/dashboard',
 	'/transactions',
 	'/transactions/new',
+	'/orders/new',
 	'/transactions/creditors',
 	'/transactions/debtors',
 ]);
