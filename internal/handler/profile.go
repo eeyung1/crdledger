@@ -47,6 +47,7 @@ func (h *ProfileHandler) EditProfilePage(w http.ResponseWriter, r *http.Request)
 		"SubscriptionPlan": user.SubscriptionPlan,
 		"SubscriptionEndsAt": user.SubscriptionEndsAt,
 		"NameError":   r.URL.Query().Get("name_error"),
+		"UpgradeError": r.URL.Query().Get("upgrade_error"),
 		"CSRFToken":   middleware.CSRFTokenFromContext(r),
 		"IsAdmin":     h.admin.IsAdmin(r),
 	})
