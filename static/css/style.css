@@ -807,3 +807,8 @@ button:disabled, .btn:disabled { opacity: 0.6; cursor: default; transform: none;
 .account-type-picker label > span, .plan-card > span { display: grid; gap: var(--space-1); }
 .seller-plan-picker { padding-top: var(--space-2); }
 .plan-card strong { font: var(--text-headline); }
+
+.seller-activation { display:flex; justify-content:space-between; align-items:center; gap:var(--space-4); padding:var(--space-4); margin-bottom:var(--space-5); }
+.seller-activation > div { display:grid; gap:var(--space-1); }
+.seller-activation form { flex:0 0 auto; }
+@media (max-width: 560px) { .seller-activation { align-items:stretch; flex-direction:column; } .seller-activation .btn { width:100%; } }
