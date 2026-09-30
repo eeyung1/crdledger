@@ -133,7 +133,13 @@
     if (syncing || !navigator.onLine) return Promise.resolve();
     syncing = true;
     return store.listOutbox().then(function (operations) {
-      return chain.then(function () {
+      var userKey = accountKey();
+      var transactions = operations.filter(function (operation) {
+        return operation.userKey === userKey &&
+          operation.type === 'create_transaction';
+      });
+      return transactions.reduce(function (chain, operation) {
+        return chain.then(function () {
           if (operation.status === 'sync_failed') return;
           return syncOperation(operation).catch(function (err) {
             if (!err.permanent) throw err;
