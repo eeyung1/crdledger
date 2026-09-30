@@ -40,6 +40,12 @@
 		</div>
 		<form method="POST" action="/subscription/checkout" class="stack">
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+			<label>
+				Email for payment
+				<input type="email" name="email" value="{{.Email}}" autocomplete="email" placeholder="you@example.com" required>
+				<span class="text-footnote">We'll save this email to your account and use it for Paystack checkout.</span>
+			</label>
+			{{if .UpgradeError}}<div class="banner is-error" role="alert">{{.UpgradeError}}</div>{{end}}
 			<label class="plan-card"><input type="radio" name="subscription_plan" value="monthly" required> <span><strong>Monthly</strong><br>₦2,000 / month</span></label>
 			<label class="plan-card"><input type="radio" name="subscription_plan" value="yearly" required> <span><strong>Yearly</strong><br>₦15,000 / year · Save ₦9,000</span></label>
 			<button type="submit" class="btn btn-primary">Pay with Paystack & upgrade</button>
