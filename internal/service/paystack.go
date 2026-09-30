@@ -40,7 +40,8 @@ func (s *PaystackService) Verify(reference, plan string) error {
 	req.Header.Set("Authorization", "Bearer "+s.secretKey)
 	resp, err := s.client.Do(req); if err != nil { return err }; defer resp.Body.Close()
 	var out paystackVerifyResponse; if err := json.NewDecoder(resp.Body).Decode(&out); err != nil { return err }
+	if resp.StatusCode >= 500 { return fmt.Errorf("paystack verify unavailable: status %d", resp.StatusCode) }
 	if resp.StatusCode != http.StatusOK || !out.Status || out.Data.Status != "success" { return ErrPaymentNotSuccessful }
-	if out.Data.Amount != amount || out.Data.Currency != "NGN" { return ErrPaymentAmountMismatch }
+	if out.Data.Reference != reference || out.Data.Amount != amount || out.Data.Currency != "NGN" { return ErrPaymentAmountMismatch }
 	return nil
 }
