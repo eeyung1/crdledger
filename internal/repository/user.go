@@ -112,8 +112,17 @@ func (r *UserRepository) SubscriptionPaymentByReference(reference string) (int64
 	return userID, plan, err
 }
 
+func (r *UserRepository) SubscriptionPaymentForUser(userID int64, reference string) (string, string, error) {
+	var plan, status string
+	err := r.db.QueryRow(`SELECT plan, status FROM subscription_payments WHERE user_id=? AND reference=?`, userID, reference).Scan(&plan, &status)
+	return plan, status, err
+}
+
 func (r *UserRepository) PendingSubscriptionPayment(userID int64, reference string) (string,error) {
-	var plan string; err := r.db.QueryRow(`SELECT plan FROM subscription_payments WHERE user_id=? AND reference=? AND status='pending'`,userID,reference).Scan(&plan); return plan,err
+	plan, status, err := r.SubscriptionPaymentForUser(userID, reference)
+	if err != nil { return "", err }
+	if status != "pending" { return "", sql.ErrNoRows }
+	return plan, nil
 }
 func (r *UserRepository) ActivateSellerSubscription(userID int64, reference, plan string) error {
 	tx, err := r.db.Begin(); if err != nil { return err }; defer tx.Rollback()
