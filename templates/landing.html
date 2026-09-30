@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<link rel="stylesheet" href="/static/css/style.css">
+	{{template "pwa_head" .}}
+	<title>CRDLedger — Shared credit records for buyers and sellers</title>
+</head>
+<body class="landing-page">
+	<header class="landing-nav">
+		<a class="landing-brand" href="/">{{template "logo"}} <span>crdledger</span></a>
+		<nav class="landing-auth" aria-label="Account">
+			<a class="btn btn-ghost" href="/login">Log in</a>
+			<a class="btn btn-primary" href="/register">Create account</a>
+		</nav>
+	</header>
+
+	<main class="landing-main">
+		<section class="landing-hero">
+			<p class="text-caption">Shared credit. Clear records.</p>
+			<h1>Credit helps business move. Poor records can turn it into a problem.</h1>
+			<p class="landing-lead">When sales happen on credit, handwritten notes, forgotten transactions and unclear payment history can create disputes and make it harder to know who owes what. CRDLedger gives buyers and sellers a shared, simple credit record.</p>
+			<div class="landing-cta">
+				<a class="btn btn-primary" href="/register">Get started</a>
+				<a class="btn btn-ghost" href="/login">I already have an account</a>
+			</div>
+		</section>
+
+		<section class="landing-features" aria-label="What CRDLedger does">
+			<article class="surface landing-feature"><strong>One shared ledger</strong><p>Keep credit transactions and repayment status visible to the people involved.</p></article>
+			<article class="surface landing-feature"><strong>Works through poor connectivity</strong><p>Sellers can record text transactions offline and CRDLedger syncs them when the connection returns.</p></article>
+			<article class="surface landing-feature"><strong>Know what is outstanding</strong><p>Buyers see what they owe while sellers can track what is owed to them and record payments.</p></article>
+		</section>
+	</main>
+
+	<footer class="landing-footer">
+		<div><strong>Need help with CRDLedger?</strong><p>Questions, account support or password reset assistance.</p></div>
+		<a class="btn btn-primary" href="https://wa.me/2348128162561?text=Hello%20CRDLedger%2C%20I%20need%20help." target="_blank" rel="noopener noreferrer">Contact on WhatsApp</a>
+	</footer>
+	<script src="/static/js/app.js" defer></script>
+</body>
+</html>
