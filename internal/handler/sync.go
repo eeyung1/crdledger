@@ -28,6 +28,21 @@ type syncResponse struct {
 	Error         string `json:"error,omitempty"`
 }
 
+func (h *SyncHandler) CSRFToken(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed"})
+		return
+	}
+	if _, ok := middleware.UserIDFromContext(r); !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "authentication required"})
+		return
+	}
+	json.NewEncoder(w).Encode(map[string]string{"csrf_token": middleware.CSRFTokenFromContext(r)})
+}
+
 func (h *SyncHandler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
