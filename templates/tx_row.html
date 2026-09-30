@@ -52,8 +52,8 @@
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 			<input type="hidden" name="transaction_id" value="{{.Tx.ID}}">
 			<input type="number" name="amount_paid" step="0.01" min="0.01" max="{{printf "%.2f" .Tx.RemainingBalance}}" value="{{printf "%.2f" .Tx.RemainingBalance}}" required aria-label="Amount paid">
-			<input type="date" name="paid_date" required>
-			<button type="submit" class="btn btn-primary btn-sm">
+			<input type="hidden" name="paid_date" value="">
+			<button type="submit" class="btn btn-primary btn-sm" data-mark-paid>
 				<span id="paid-spinner-{{.Tx.ID}}" class="htmx-indicator spinner" aria-hidden="true"></span>
 				Mark paid
 			</button>
