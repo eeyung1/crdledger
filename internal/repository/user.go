@@ -108,7 +108,7 @@ func (r *UserRepository) ActivateSellerSubscription(userID int64, reference, pla
 	var status string; if err := tx.QueryRow(`SELECT status FROM subscription_payments WHERE user_id=? AND reference=?`,userID,reference).Scan(&status); err != nil { return err }
 	if status == "completed" { return tx.Commit() }
 	modifier := "+1 month"; if plan == "yearly" { modifier = "+1 year" }
-	if _,err=tx.Exec(`UPDATE users SET subscription_status='active', subscription_ends_at=datetime(CASE WHEN subscription_ends_at > CURRENT_TIMESTAMP THEN subscription_ends_at ELSE CURRENT_TIMESTAMP END, ?) WHERE id=? AND account_type='seller'`,modifier,userID); err != nil{return err}
+	if _,err=tx.Exec(`UPDATE users SET account_type='seller', subscription_status='active', subscription_plan=?, subscription_ends_at=datetime(CASE WHEN subscription_ends_at > CURRENT_TIMESTAMP THEN subscription_ends_at ELSE CURRENT_TIMESTAMP END, ?) WHERE id=?`,plan,modifier,userID); err != nil{return err}
 	if _,err=tx.Exec(`UPDATE subscription_payments SET status='completed', completed_at=CURRENT_TIMESTAMP WHERE user_id=? AND reference=?`,userID,reference);err!=nil{return err}
 	return tx.Commit()
 }
