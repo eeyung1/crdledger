@@ -76,7 +76,7 @@
 		var selected = window.prompt('Date of payment (YYYY-MM-DD):', new Date().toISOString().slice(0, 10));
 		if (selected === null) return;
 		selected = selected.trim();
-		if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(selected)) {
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(selected)) {
 			toast('Enter the payment date as YYYY-MM-DD.');
 			return;
 		}
