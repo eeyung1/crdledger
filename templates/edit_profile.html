@@ -51,8 +51,25 @@
 			<button type="submit" class="btn btn-primary">Pay with Paystack & upgrade</button>
 		</form>
 	</section>
-	{{else if .SellerActive}}
-	<div class="banner is-success" role="status">Seller account active{{if .SubscriptionEndsAt}} until {{.SubscriptionEndsAt.Format "02 Jan 2006"}}{{end}}.</div>
+	{{else}}
+	<section class="seller-activation surface" aria-label="Seller subscription">
+		<div>
+			<p class="text-caption">Seller subscription</p>
+			<h2 class="text-title-2">{{if .SellerActive}}Seller account active{{else}}Subscription expired{{end}}</h2>
+			{{if .SellerActive}}
+				<p class="text-footnote">{{if eq .SubscriptionPlan "yearly"}}Yearly{{else}}Monthly{{end}} plan{{if .SubscriptionEndsAt}} · Renews/ends {{.SubscriptionEndsAt.Format "02 Jan 2006"}} · {{.SubscriptionDaysRemaining}} day{{if ne .SubscriptionDaysRemaining 1}}s{{end}} remaining{{end}}.</p>
+			{{else}}
+				<p class="text-footnote">Your ledger history is safe, but seller-only actions are locked until you renew.</p>
+			{{end}}
+		</div>
+		<form method="POST" action="/subscription/checkout" class="stack">
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+			<label class="plan-card"><input type="radio" name="subscription_plan" value="monthly" {{if eq .SubscriptionPlan "monthly"}}checked{{end}} required> <span><strong>Monthly</strong><br>₦2,000 / month</span></label>
+			<label class="plan-card"><input type="radio" name="subscription_plan" value="yearly" {{if eq .SubscriptionPlan "yearly"}}checked{{end}} required> <span><strong>Yearly</strong><br>₦15,000 / year · Save ₦9,000</span></label>
+			<button type="submit" class="btn btn-primary">{{if .SellerActive}}Renew / extend subscription{{else}}Renew seller subscription{{end}}</button>
+			{{if .SellerActive}}<p class="text-footnote">Renewing early adds the new period after your current expiry date, so you do not lose remaining time.</p>{{end}}
+		</form>
+	</section>
 	{{end}}
 
 	<button type="button" class="btn btn-primary profile-edit-toggle" data-profile-edit-toggle aria-expanded="false" aria-controls="profile-edit-panel">Edit profile</button>
