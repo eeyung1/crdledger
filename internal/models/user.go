@@ -10,6 +10,7 @@ type User struct {
 	PhotoPath    string
 	AccountType  string
 	SubscriptionStatus string
+	SubscriptionPlan string
 	SubscriptionEndsAt *time.Time
 	CreatedAt    time.Time
 }
