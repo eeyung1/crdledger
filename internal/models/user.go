@@ -5,6 +5,7 @@ import "time"
 type User struct {
 	ID           int64
 	Username     string
+	Email        string
 	PasswordHash string
 	DisplayName  string
 	PhotoPath    string
