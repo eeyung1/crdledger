@@ -158,6 +158,11 @@ func (r *UserRepository) AdminPaymentRows(limit int) ([]AdminPaymentRow, error) 
 func (r *UserRepository) CreateSubscriptionPayment(userID int64, reference, plan string) error {
 	_, err := r.db.Exec(`INSERT INTO subscription_payments (user_id, reference, plan, status) VALUES (?, ?, ?, 'pending')`, userID, reference, plan); return err
 }
+func (r *UserRepository) MarkSubscriptionPaymentFailed(userID int64, reference string) error {
+	_, err := r.db.Exec(`UPDATE subscription_payments SET status='failed' WHERE user_id=? AND reference=? AND status='pending'`, userID, reference)
+	return err
+}
+
 func (r *UserRepository) SubscriptionPaymentByReference(reference string) (int64, string, error) {
 	var userID int64
 	var plan string

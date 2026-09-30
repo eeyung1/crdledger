@@ -30,6 +30,9 @@
 	{{if .NameError}}
 	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.NameError}}</div>
 	{{end}}
+	{{if .PaymentError}}
+	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.PaymentError}} You can safely try the payment again.</div>
+	{{end}}
 
 	{{if not .IsSeller}}
 	<section class="seller-activation surface" aria-label="Upgrade to seller">
