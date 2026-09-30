@@ -84,7 +84,7 @@ func main() {
 	exportHandler := handler.NewExportHandler(balanceService)
 	adminHandler := handler.NewAdminHandler(authService, adminChecker, templates)
 	paystackService := service.NewPaystackService(cfg.PaystackSecretKey)
-	subscriptionHandler := handler.NewSubscriptionHandler(userRepo, paystackService, templates)
+	subscriptionHandler := handler.NewSubscriptionHandler(userRepo, paystackService, templates, cfg.PaystackSecretKey)
 
 	csrf := middleware.CSRF(cfg.SecureCookies)
 	authLimiter := middleware.NewRateLimiter(10, time.Minute)
@@ -141,6 +141,9 @@ func main() {
 	mux.HandleFunc("/api/sync/transactions", csrf(sessions.RequireAuth(sellerOnly(syncHandler.CreateTransaction))))
 	mux.HandleFunc("/subscription/checkout", csrf(sessions.RequireAuth(subscriptionHandler.Checkout)))
 	mux.HandleFunc("/subscription/callback", sessions.RequireAuth(subscriptionHandler.Callback))
+	// Paystack calls this endpoint server-to-server. Signature verification in
+	// the handler authenticates the request, so it must not use CSRF/session middleware.
+	mux.HandleFunc("/webhooks/paystack", subscriptionHandler.Webhook)
 	mux.HandleFunc("/orders/new", csrf(sessions.RequireAuth(orderHandler.NewOrderPage)))
 	mux.HandleFunc("/transactions/mark-paid", csrf(sessions.RequireAuth(sellerOnly(transactionHandler.MarkPaid))))
 	mux.HandleFunc("/transactions/confirm", csrf(sessions.RequireAuth(transactionHandler.Confirm)))

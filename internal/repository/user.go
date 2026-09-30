@@ -105,6 +105,13 @@ func (r *UserRepository) HasActiveSellerSubscription(userID int64) (bool, error)
 func (r *UserRepository) CreateSubscriptionPayment(userID int64, reference, plan string) error {
 	_, err := r.db.Exec(`INSERT INTO subscription_payments (user_id, reference, plan, status) VALUES (?, ?, ?, 'pending')`, userID, reference, plan); return err
 }
+func (r *UserRepository) SubscriptionPaymentByReference(reference string) (int64, string, error) {
+	var userID int64
+	var plan string
+	err := r.db.QueryRow(`SELECT user_id, plan FROM subscription_payments WHERE reference=?`, reference).Scan(&userID, &plan)
+	return userID, plan, err
+}
+
 func (r *UserRepository) PendingSubscriptionPayment(userID int64, reference string) (string,error) {
 	var plan string; err := r.db.QueryRow(`SELECT plan FROM subscription_payments WHERE user_id=? AND reference=? AND status='pending'`,userID,reference).Scan(&plan); return plan,err
 }
