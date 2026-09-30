@@ -7,13 +7,16 @@
 
   var SNAPSHOT_KIND = 'transactions-list';
 
+  function pageUser() {
+    return String(document.body && document.body.getAttribute('data-offline-user-key') || '');
+  }
+
   function ledgerWrap() {
     return document.getElementById('tx-list-wrap');
   }
 
   function snapshotUser() {
-    var wrap = ledgerWrap();
-    return wrap ? String(wrap.getAttribute('data-offline-user-id') || '') : '';
+    return pageUser();
   }
 
   function statusHost() {
