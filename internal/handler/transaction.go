@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"time"
 
 	"crdledger/internal/middleware"
 	"crdledger/internal/repository"
@@ -38,6 +39,8 @@ type RecordFormData struct {
 	Amount        string
 	Description   string
 	IsAdmin       bool
+	IsSeller      bool
+	SellerActive  bool
 }
 
 func (h *TransactionHandler) RecordPage(w http.ResponseWriter, r *http.Request) {
@@ -48,6 +51,8 @@ func (h *TransactionHandler) RecordPage(w http.ResponseWriter, r *http.Request) 
 		h.templates.ExecuteTemplate(w, "record.html", RecordFormData{
 			UserID: userID,
 			PhotoPath: user.PhotoPath,
+			IsSeller: user.AccountType == "seller",
+			SellerActive: user.AccountType == "seller" && user.SubscriptionStatus == "active" && (user.SubscriptionEndsAt == nil || user.SubscriptionEndsAt.After(time.Now())),
 			CSRFToken: middleware.CSRFTokenFromContext(r),
 			IsAdmin:   h.admin.IsAdmin(r),
 		})
