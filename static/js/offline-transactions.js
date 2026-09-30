@@ -1,6 +1,6 @@
 // Offline transaction writes for crdledger.
 // Text-only ledger entries can be queued while disconnected and retried safely
-// through the idempotent /sync/transactions endpoint. Receipt uploads remain
+// through the idempotent /api/sync/transactions endpoint. Receipt uploads remain
 // online-only so the UI never claims an unsaved image has synced.
 (function (global) {
   'use strict';
@@ -98,7 +98,7 @@
       body.set('amount', current.amount);
       body.set('description', current.description);
 
-      return fetch('/sync/transactions', {
+      return fetch('/api/sync/transactions', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
