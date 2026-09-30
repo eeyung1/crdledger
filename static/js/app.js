@@ -65,25 +65,24 @@
 	});
 
 	// ---- mark-paid payment date prompt ----
-	document.addEventListener('submit', function (e) {
-		var form = e.target;
-		if (!form || form.getAttribute('action') !== '/transactions/mark-paid') return;
+	document.addEventListener('click', function (e) {
+		var btn = e.target.closest && e.target.closest('[data-mark-paid]');
+		if (!btn) return;
+		var form = btn.closest('form');
+		if (!form) return;
 		var paidDate = form.querySelector('input[name="paid_date"]');
-		if (!paidDate || paidDate.value) return;
-
-		e.preventDefault();
-		e.stopImmediatePropagation();
+		if (!paidDate) return;
 
 		var selected = window.prompt('Date of payment (YYYY-MM-DD):', new Date().toISOString().slice(0, 10));
 		if (selected === null) return;
 		selected = selected.trim();
-		if (!/^\d{4}-\d{2}-\d{2}$/.test(selected)) {
+		if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(selected)) {
 			toast('Enter the payment date as YYYY-MM-DD.');
 			return;
 		}
 		paidDate.value = selected;
-		if (window.htmx) {
-			window.htmx.trigger(form, 'submit');
+		if (typeof form.requestSubmit === 'function') {
+			form.requestSubmit();
 		} else {
 			form.submit();
 		}
