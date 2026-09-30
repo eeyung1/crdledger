@@ -15,6 +15,7 @@ type Config struct {
 	SessionSecret  string
 	SecureCookies  bool // true when the app is served over HTTPS
 	Environment    string
+	PaystackSecretKey string
 	AdminUsernames map[string]bool // usernames allowed to reset other users' passwords
 }
 
@@ -40,6 +41,7 @@ func Load() (Config, error) {
 		TursoAuthToken: tursoToken,
 		SessionSecret:  secret,
 		SecureCookies:  getEnv("SECURE_COOKIES", "false") == "true",
+		PaystackSecretKey: getEnv("PAYSTACK_SECRET_KEY", ""),
 		Environment:    getEnv("ENVIRONMENT", "development"),
 		AdminUsernames: parseAdminUsernames(getEnv("ADMIN_USERNAMES", "")),
 	}
