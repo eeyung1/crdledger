@@ -19,6 +19,23 @@
 		</div>
 	</div>
 
+	{{if .SubscriptionActivated}}
+	<div class="banner is-success" role="status">Seller subscription activated. You can now record transactions.</div>
+	{{end}}
+	{{if .IsSeller}}{{if not .SellerActive}}
+	<section class="seller-activation surface">
+		<div>
+			<p class="text-caption">Seller account</p>
+			<h2 class="text-title-2">Activate seller tools</h2>
+			<p class="text-footnote">{{if eq .SubscriptionPlan "yearly"}}Yearly plan · ₦15,000/year{{else}}Monthly plan · ₦2,000/month{{end}}. Secure payment via Paystack.</p>
+		</div>
+		<form method="POST" action="/subscription/checkout">
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+			<button type="submit" class="btn btn-primary">Pay & activate</button>
+		</form>
+	</section>
+	{{end}}{{end}}
+
 	{{if .PhotoError}}
 	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.PhotoError}}</div>
 	{{end}}
@@ -85,7 +102,7 @@
 	{{end}}
 
 	<div class="btn-row only-desktop">
-		<a href="/transactions/new" class="btn btn-primary btn-max">{{template "icon_record"}} Record a transaction</a>
+		{{if .SellerActive}}<a href="/transactions/new" class="btn btn-primary btn-max">{{template "icon_record"}} Record a transaction</a>{{end}}
 		<a href="/orders/new" class="btn btn-ghost btn-max">{{template "icon_cart"}} Add orders</a>
 	</div>
 {{template "sidebar_end" .}}

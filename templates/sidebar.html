@@ -7,7 +7,7 @@
 		</div>
 		<a class="nav-link" data-nav="/dashboard" href="/dashboard">{{template "icon_dashboard"}} Dashboard</a>
 		<a class="nav-link" data-nav="/profile/edit" href="/profile/edit">{{template "icon_profile"}} Edit profile</a>
-		<a class="nav-link" data-nav="/transactions/new" href="/transactions/new">{{template "icon_record"}} Record a transaction</a>
+		{{if .SellerActive}}<a class="nav-link" data-nav="/transactions/new" href="/transactions/new">{{template "icon_record"}} Record a transaction</a>{{end}}
 	<a class="nav-link" data-nav="/orders/new" href="/orders/new">{{template "icon_cart"}} Add orders</a>
 		<a class="nav-link" data-nav="/transactions" href="/transactions">{{template "icon_list"}} Transactions</a>
 		{{if .IsAdmin}}
@@ -41,7 +41,7 @@
 				<span class="tab-fab-circle">{{template "icon_record"}}</span>
 			</summary>
 			<div class="tab-fab-menu">
-				<a href="/transactions/new" class="tab-fab-option">{{template "icon_record"}} Record a transaction</a>
+				{{if .SellerActive}}<a href="/transactions/new" class="tab-fab-option">{{template "icon_record"}} Record a transaction</a>{{end}}
 				<a href="/orders/new" class="tab-fab-option">{{template "icon_cart"}} Add orders</a>
 			</div>
 		</details>
