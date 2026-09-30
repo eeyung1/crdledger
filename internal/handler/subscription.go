@@ -53,9 +53,14 @@ func (h *SubscriptionHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 func (h *SubscriptionHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	id, ok := middleware.UserIDFromContext(r); if !ok { http.Redirect(w,r,"/login",http.StatusSeeOther); return }
 	ref := r.URL.Query().Get("reference"); if ref == "" { http.Error(w,"missing payment reference",http.StatusBadRequest); return }
-	plan, err := h.users.PendingSubscriptionPayment(id,ref); if err != nil { http.Error(w,"Unknown payment reference.",http.StatusBadRequest); return }
-	if err := h.paystack.Verify(ref,plan); err != nil { http.Error(w,"Payment could not be verified.",http.StatusBadRequest); return }
-	if err := h.users.ActivateSellerSubscription(id,ref,plan); err != nil { http.Error(w,"Could not activate subscription.",http.StatusInternalServerError); return }
+	plan, status, err := h.users.SubscriptionPaymentForUser(id,ref); if err != nil { http.Error(w,"Unknown payment reference.",http.StatusBadRequest); return }
+	// The webhook can arrive before the customer's browser returns from Paystack.
+	// If it already completed this payment, activation has succeeded and the
+	// callback should simply finish the user journey instead of reporting an error.
+	if status != "completed" {
+		if err := h.paystack.Verify(ref,plan); err != nil { http.Error(w,"Payment could not be verified.",http.StatusBadRequest); return }
+		if err := h.users.ActivateSellerSubscription(id,ref,plan); err != nil { http.Error(w,"Could not activate subscription.",http.StatusInternalServerError); return }
+	}
 	http.Redirect(w,r,"/dashboard?subscription=active",http.StatusSeeOther)
 }
 
