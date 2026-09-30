@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"errors"
 	"html/template"
 	"net/http"
 	"net/mail"
@@ -55,7 +56,14 @@ func (h *SubscriptionHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	// If it already completed this payment, activation has succeeded and the
 	// callback should simply finish the user journey instead of reporting an error.
 	if status != "completed" {
-		if err := h.paystack.Verify(ref,plan); err != nil { http.Error(w,"Payment could not be verified.",http.StatusBadRequest); return }
+		if err := h.paystack.Verify(ref,plan); err != nil {
+			if errors.Is(err, service.ErrPaymentNotSuccessful) || errors.Is(err, service.ErrPaymentAmountMismatch) {
+				_ = h.users.MarkSubscriptionPaymentFailed(id, ref)
+				http.Redirect(w,r,"/profile/edit?payment_error=Payment+was+not+completed.+No+subscription+was+activated.",http.StatusSeeOther)
+				return
+			}
+			http.Error(w,"Payment verification is temporarily unavailable. Please retry from your payment return link.",http.StatusBadGateway); return
+		}
 		if err := h.users.ActivateSellerSubscription(id,ref,plan); err != nil { http.Error(w,"Could not activate subscription.",http.StatusInternalServerError); return }
 	}
 	http.Redirect(w,r,"/dashboard?subscription=active",http.StatusSeeOther)
@@ -92,7 +100,16 @@ func (h *SubscriptionHandler) Webhook(w http.ResponseWriter, r *http.Request) {
 
 	// Do not trust webhook fields alone. Verify the transaction directly
 	// with Paystack, including successful status, NGN currency and exact plan amount.
-	if err := h.paystack.Verify(event.Data.Reference, plan); err != nil { http.Error(w, "verification failed", http.StatusBadGateway); return }
+	if err := h.paystack.Verify(event.Data.Reference, plan); err != nil {
+		// A signed success webhook is still verified directly with Paystack.
+		// Permanent verification mismatches are acknowledged so Paystack does
+		// not retry forever; transient provider/network failures return 502.
+		if errors.Is(err, service.ErrPaymentNotSuccessful) || errors.Is(err, service.ErrPaymentAmountMismatch) {
+			_ = h.users.MarkSubscriptionPaymentFailed(userID, event.Data.Reference)
+			w.WriteHeader(http.StatusOK); return
+		}
+		http.Error(w, "verification temporarily unavailable", http.StatusBadGateway); return
+	}
 	if err := h.users.ActivateSellerSubscription(userID, event.Data.Reference, plan); err != nil { http.Error(w, "activation failed", http.StatusInternalServerError); return }
 	w.WriteHeader(http.StatusOK)
 }
