@@ -36,6 +36,13 @@ func (h *ProfileHandler) EditProfilePage(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	sellerActive := user.AccountType == "seller" && user.SubscriptionStatus == "active" && (user.SubscriptionEndsAt == nil || user.SubscriptionEndsAt.After(time.Now()))
+	var subscriptionDaysRemaining int
+	if sellerActive && user.SubscriptionEndsAt != nil {
+		subscriptionDaysRemaining = int(time.Until(*user.SubscriptionEndsAt).Hours() / 24)
+		if subscriptionDaysRemaining < 1 { subscriptionDaysRemaining = 1 }
+	}
+
 	h.templates.ExecuteTemplate(w, "edit_profile.html", map[string]any{
 		"PhotoPath":   user.PhotoPath,
 		"PhotoError":  r.URL.Query().Get("photo_error"),
@@ -43,7 +50,8 @@ func (h *ProfileHandler) EditProfilePage(w http.ResponseWriter, r *http.Request)
 		"Username":    user.Username,
 		"Email":       user.Email,
 		"IsSeller":    user.AccountType == "seller",
-		"SellerActive": user.AccountType == "seller" && user.SubscriptionStatus == "active" && (user.SubscriptionEndsAt == nil || user.SubscriptionEndsAt.After(time.Now())),
+		"SellerActive": sellerActive,
+		"SubscriptionDaysRemaining": subscriptionDaysRemaining,
 		"SubscriptionPlan": user.SubscriptionPlan,
 		"SubscriptionEndsAt": user.SubscriptionEndsAt,
 		"NameError":   r.URL.Query().Get("name_error"),
