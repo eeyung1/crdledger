@@ -9,6 +9,13 @@
 const CACHE_NAME = 'crdledger-static-v7';
 const PAGE_CACHE_NAME = 'crdledger-pages-v1';
 const OFFLINE_URL = '/static/offline.html';
+const OFFLINE_APP_ROUTES = new Set([
+	'/dashboard',
+	'/transactions',
+	'/transactions/new',
+	'/transactions/creditors',
+	'/transactions/debtors',
+]);
 
 const PRECACHE_URLS = [
 	'/static/css/style.css',
@@ -53,7 +60,7 @@ self.addEventListener('fetch', (event) => {
 	if (req.mode === 'navigate') {
 		event.respondWith(
 			fetch(req).then((res) => {
-				if (url.origin === self.location.origin && res.ok && res.type === 'basic') {
+				if (url.origin === self.location.origin && OFFLINE_APP_ROUTES.has(url.pathname) && res.ok && res.type === 'basic') {
 					const contentType = res.headers.get('content-type') || '';
 					if (contentType.includes('text/html')) {
 						const copy = res.clone();
