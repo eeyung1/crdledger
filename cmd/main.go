@@ -83,6 +83,8 @@ func main() {
 	profileHandler := handler.NewProfileHandler(userRepo, authService, adminChecker, templates)
 	exportHandler := handler.NewExportHandler(balanceService)
 	adminHandler := handler.NewAdminHandler(authService, adminChecker, templates)
+	paystackService := service.NewPaystackService(cfg.PaystackSecretKey)
+	subscriptionHandler := handler.NewSubscriptionHandler(userRepo, paystackService, templates)
 
 	csrf := middleware.CSRF(cfg.SecureCookies)
 	authLimiter := middleware.NewRateLimiter(10, time.Minute)
@@ -137,6 +139,8 @@ func main() {
 	}
 	mux.HandleFunc("/transactions/new", csrf(sessions.RequireAuth(sellerOnly(transactionHandler.RecordPage))))
 	mux.HandleFunc("/api/sync/transactions", csrf(sessions.RequireAuth(sellerOnly(syncHandler.CreateTransaction))))
+	mux.HandleFunc("/subscription/checkout", csrf(sessions.RequireAuth(subscriptionHandler.Checkout)))
+	mux.HandleFunc("/subscription/callback", sessions.RequireAuth(subscriptionHandler.Callback))
 	mux.HandleFunc("/orders/new", csrf(sessions.RequireAuth(orderHandler.NewOrderPage)))
 	mux.HandleFunc("/transactions/mark-paid", csrf(sessions.RequireAuth(sellerOnly(transactionHandler.MarkPaid))))
 	mux.HandleFunc("/transactions/confirm", csrf(sessions.RequireAuth(transactionHandler.Confirm)))
@@ -188,6 +192,7 @@ func createTables(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		username TEXT NOT NULL UNIQUE,
+		email TEXT NOT NULL DEFAULT '',
 		password_hash TEXT NOT NULL,
 		display_name TEXT NOT NULL,
 		photo_path TEXT,
@@ -196,6 +201,17 @@ func createTables(db *sql.DB) error {
 		subscription_plan TEXT NOT NULL DEFAULT '',
 		subscription_ends_at DATETIME,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+	);`
+
+	subscriptionPaymentsTable := `
+	CREATE TABLE IF NOT EXISTS subscription_payments (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL REFERENCES users(id),
+		reference TEXT NOT NULL UNIQUE,
+		plan TEXT NOT NULL,
+		status TEXT NOT NULL DEFAULT 'pending',
+		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		completed_at DATETIME
 	);`
 
 	transactionsTable := `
@@ -220,6 +236,7 @@ func createTables(db *sql.DB) error {
 	if _, err := db.Exec(usersTable); err != nil {
 		return err
 	}
+	if _, err := db.Exec(subscriptionPaymentsTable); err != nil { return err }
 	if _, err := db.Exec(transactionsTable); err != nil {
 		return err
 	}
@@ -227,6 +244,7 @@ func createTables(db *sql.DB) error {
 	// Account roles and seller subscription state. Existing accounts remain
 	// buyers by default; seller access is granted only after activation.
 	for _, migration := range []string{
+		`ALTER TABLE users ADD COLUMN email TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE users ADD COLUMN account_type TEXT NOT NULL DEFAULT 'buyer'`,
 		`ALTER TABLE users ADD COLUMN subscription_status TEXT NOT NULL DEFAULT 'not_required'`,
 		`ALTER TABLE users ADD COLUMN subscription_plan TEXT NOT NULL DEFAULT ''`,
