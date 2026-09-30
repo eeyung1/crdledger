@@ -117,7 +117,9 @@ func main() {
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		if err := templates.ExecuteTemplate(w, "landing.html", nil); err != nil {
+			http.Error(w, "failed to render page", http.StatusInternalServerError)
+		}
 	})
 
 	mux.HandleFunc("/register", csrf(authLimiter.Limit(authHandler.RegisterPage)))
