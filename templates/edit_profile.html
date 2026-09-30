@@ -31,23 +31,39 @@
 	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.NameError}}</div>
 	{{end}}
 
-	<form method="POST" action="/profile/display-name" class="stack surface card">
-		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-		<label>
-			Display name
-			<input type="text" name="display_name" value="{{.DisplayName}}" maxlength="60" required>
-		</label>
-		<button type="submit" class="btn-primary">Save name</button>
-	</form>
+	<button type="button" class="btn btn-primary profile-edit-toggle" data-profile-edit-toggle aria-expanded="false" aria-controls="profile-edit-panel">Edit profile</button>
 
-	<form method="POST" action="/photo/upload" enctype="multipart/form-data" class="stack surface card">
-		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-		<label>
-			{{if .PhotoPath}}Change{{else}}Add{{end}} profile photo
-			<input type="file" name="photo" accept="image/jpeg,image/png,image/gif" required>
-		</label>
-		<button type="submit" class="btn-primary">Upload photo</button>
-	</form>
+	<section id="profile-edit-panel" class="profile-edit-panel surface" hidden>
+		<div class="profile-edit-heading">
+			<div>
+				<p class="text-caption">Edit details</p>
+				<h2>Update your profile</h2>
+			</div>
+			<button type="button" class="btn btn-ghost btn-sm" data-profile-edit-close>Close</button>
+		</div>
+
+		<form method="POST" action="/profile/display-name" class="stack profile-edit-form">
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+			<label>
+				Display name
+				<input type="text" name="display_name" value="{{.DisplayName}}" maxlength="60" required>
+			</label>
+			<button type="submit" class="btn-primary">Save name</button>
+		</form>
+
+		<form method="POST" action="/photo/upload" enctype="multipart/form-data" class="stack profile-edit-form">
+			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+			<label class="profile-photo-picker">
+				<span>{{if .PhotoPath}}Change{{else}}Add{{end}} profile photo</span>
+				<input type="file" name="photo" accept="image/jpeg,image/png,image/gif" required data-profile-photo-input>
+				<span class="profile-photo-control">
+					<span class="btn btn-ghost btn-sm">Choose photo</span>
+					<span class="text-footnote" data-profile-photo-name>No photo selected</span>
+				</span>
+			</label>
+			<button type="submit" class="btn-primary">Save photo</button>
+		</form>
+	</section>
 {{template "sidebar_end" .}}
 </body>
 </html>
