@@ -29,6 +29,22 @@
 		{{end}}
 	</div>
 
+	<dialog id="payment-date-dialog" class="payment-dialog" aria-labelledby="payment-dialog-title">
+		<form method="dialog" class="payment-dialog-card">
+			<div>
+				<p class="text-caption">Settle transaction</p>
+				<h2 id="payment-dialog-title">Date of payment</h2>
+				<p class="text-footnote">Choose when the payment was received.</p>
+			</div>
+			<label for="payment-date-picker">Payment date</label>
+			<input id="payment-date-picker" type="date" required>
+			<div class="payment-dialog-actions">
+				<button type="button" class="btn btn-ghost" data-payment-cancel>Cancel</button>
+				<button type="button" class="btn btn-primary" data-payment-confirm>Confirm payment</button>
+			</div>
+		</form>
+	</dialog>
+
 	<div id="tx-list-wrap">
 		{{template "tx_list_fragment" .}}
 	</div>
