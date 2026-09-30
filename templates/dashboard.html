@@ -59,6 +59,7 @@
 	<!-- The single number the eye should land on first: net position,
 	     signed, above everything else. Receivable/owed are proven
 	     secondary purely by size and position below. -->
+	{{if .IsSeller}}
 	<div class="net-position">
 		<p class="text-caption">Net position</p>
 		<div class="net-position-row">
@@ -72,11 +73,14 @@
 		</p>
 	</div>
 
-	<div class="balance-summary two-col">
-		<a class="balance-card surface receivable" href="/transactions/creditors">
+	</div>
+	{{end}}
+
+	<div class="balance-summary {{if .IsSeller}}two-col{{end}}">
+		{{if .IsSeller}}<a class="balance-card surface receivable" href="/transactions/creditors">
 			<div class="label">{{template "icon_receivable"}} Owed to you</div>
 			<div class="amount-large">{{printf "%.2f" .TotalReceivable}}</div>
-		</a>
+		</a>{{end}}
 		<a class="balance-card surface owed" href="/transactions/debtors">
 			<div class="label">{{template "icon_owed"}} You owe</div>
 			<div class="amount-large">{{printf "%.2f" .TotalOwed}}</div>
@@ -84,14 +88,14 @@
 	</div>
 
 	{{if .IsEmpty}}
-	<p class="empty-hint">Record your first transaction to start the ledger.</p>
+	<p class="empty-hint">{{if .IsSeller}}Record your first transaction to start the ledger.{{else}}Add your first order to start the ledger.{{end}}</p>
 	{{else}}
-		{{if .ShowCreditorChart}}
+		{{if .IsSeller}}{{if .ShowCreditorChart}}
 		<div class="net-bar-section">
 			<h2 class="text-title-2">Who owes you the most</h2>
 			{{template "net_bar_list" .CreditorBarData}}
 		</div>
-		{{end}}
+		{{end}}{{end}}
 		{{if .ShowDebtorChart}}
 		<div class="net-bar-section">
 			<h2 class="text-title-2">Who you owe the most</h2>

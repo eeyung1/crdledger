@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"time"
 
 	"crdledger/internal/middleware"
 	"crdledger/internal/repository"
@@ -35,6 +36,8 @@ type OrderFormData struct {
 	Amount         string
 	Description    string
 	IsAdmin        bool
+	IsSeller       bool
+	SellerActive   bool
 }
 
 // NewOrderPage handles "Add Orders" — a buyer self-reporting something
@@ -48,6 +51,8 @@ func (h *OrderHandler) NewOrderPage(w http.ResponseWriter, r *http.Request) {
 		h.templates.ExecuteTemplate(w, "add_order.html", OrderFormData{
 			CSRFToken: middleware.CSRFTokenFromContext(r),
 			PhotoPath: user.PhotoPath,
+			IsSeller: user.AccountType == "seller",
+			SellerActive: user.AccountType == "seller" && user.SubscriptionStatus == "active" && (user.SubscriptionEndsAt == nil || user.SubscriptionEndsAt.After(time.Now())),
 			IsAdmin:   h.admin.IsAdmin(r),
 		})
 		return
