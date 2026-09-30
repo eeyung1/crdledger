@@ -11,6 +11,7 @@ var ErrInvalidAmount = errors.New("amount must be positive")
 var ErrInvalidDescription = errors.New("description is required")
 var ErrBuyerNotFound = errors.New("no user with that username")
 var ErrSellerNotFound = errors.New("no user with that username")
+var ErrNotSellerAccount = errors.New("user is not a seller")
 var ErrCannotRecordSelf = errors.New("you cannot record a transaction with yourself")
 var ErrOperationIDRequired = errors.New("client operation id is required")
 
@@ -97,6 +98,10 @@ func (s *TransactionService) RecordOrder(buyerID int64, sellerUsername string, a
 			return nil, ErrSellerNotFound
 		}
 		return nil, err
+	}
+
+	if seller.AccountType != "seller" {
+		return nil, ErrNotSellerAccount
 	}
 
 	if seller.ID == buyerID {
