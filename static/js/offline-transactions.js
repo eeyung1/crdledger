@@ -155,7 +155,10 @@
       });
       return transactions.reduce(function (chain, operation) {
         return chain.then(function () {
-          if (operation.status === 'sync_failed' && !/status 404/i.test(operation.syncError || '')) return;
+          // 403 failures from older cached pages can recover after the CSRF token
+          // refresh fix, just like the earlier 404 endpoint migration. Keep truly
+          // permanent validation failures stopped until the user edits them.
+          if (operation.status === 'sync_failed' && !/status (403|404)/i.test(operation.syncError || '')) return;
           return syncOperation(operation).catch(function (err) {
             if (!err.permanent) throw err;
           });
