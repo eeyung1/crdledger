@@ -10,11 +10,18 @@
 <body>
 {{template "sidebar" .}}
 	<p class="text-caption">Your account</p>
-	<h1 class="text-title-1 page-title">Edit profile</h1>
+	<h1 class="text-title-1 page-title">Profile</h1>
 
-	<div class="avatar lg profile-avatar-block">
-		{{if .PhotoPath}}<img src="{{.PhotoPath}}" alt="">{{else}}{{template "icon_profile"}}{{end}}
-	</div>
+	<section class="profile-identity surface" aria-label="Account identity">
+		<div class="avatar lg">
+			{{if .PhotoPath}}<img src="{{.PhotoPath}}" alt="">{{else}}{{template "icon_profile"}}{{end}}
+		</div>
+		<div class="profile-identity-copy">
+			<div class="profile-display-name">{{.DisplayName}}</div>
+			<div class="profile-username">@{{.Username}}</div>
+			<p class="text-footnote">Your username is how other people find you on crdledger.</p>
+		</div>
+	</section>
 
 	{{if .PhotoError}}
 	<div class="banner is-error" role="alert">{{template "icon_alert"}} {{.PhotoError}}</div>
