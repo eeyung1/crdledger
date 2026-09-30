@@ -127,6 +127,34 @@ func (r *UserRepository) SubscriptionPaymentsForUser(userID int64) ([]Subscripti
 	return payments, rows.Err()
 }
 
+type AdminSubscriptionRow struct {
+	Username, Email, AccountType, Status, Plan string
+	EndsAt sql.NullString
+}
+
+func (r *UserRepository) AdminSubscriptionRows() ([]AdminSubscriptionRow, error) {
+	rows, err := r.db.Query(`SELECT username,email,account_type,subscription_status,subscription_plan,CAST(subscription_ends_at AS TEXT)
+		FROM users ORDER BY CASE WHEN account_type='seller' THEN 0 ELSE 1 END, username`)
+	if err != nil { return nil, err }
+	defer rows.Close()
+	var out []AdminSubscriptionRow
+	for rows.Next() { var v AdminSubscriptionRow; if err:=rows.Scan(&v.Username,&v.Email,&v.AccountType,&v.Status,&v.Plan,&v.EndsAt);err!=nil{return nil,err}; out=append(out,v) }
+	return out, rows.Err()
+}
+
+type AdminPaymentRow struct {
+	Username, Reference, Plan, Status, CreatedAt string
+	CompletedAt sql.NullString
+}
+func (r *UserRepository) AdminPaymentRows(limit int) ([]AdminPaymentRow, error) {
+	rows, err := r.db.Query(`SELECT u.username,p.reference,p.plan,p.status,CAST(p.created_at AS TEXT),CAST(p.completed_at AS TEXT)
+		FROM subscription_payments p JOIN users u ON u.id=p.user_id ORDER BY p.created_at DESC LIMIT ?`, limit)
+	if err != nil{return nil,err}; defer rows.Close()
+	var out []AdminPaymentRow
+	for rows.Next(){var v AdminPaymentRow;if err:=rows.Scan(&v.Username,&v.Reference,&v.Plan,&v.Status,&v.CreatedAt,&v.CompletedAt);err!=nil{return nil,err};out=append(out,v)}
+	return out,rows.Err()
+}
+
 func (r *UserRepository) CreateSubscriptionPayment(userID int64, reference, plan string) error {
 	_, err := r.db.Exec(`INSERT INTO subscription_payments (user_id, reference, plan, status) VALUES (?, ?, ?, 'pending')`, userID, reference, plan); return err
 }
