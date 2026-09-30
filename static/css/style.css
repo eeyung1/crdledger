@@ -760,3 +760,32 @@ button:disabled, .btn:disabled { opacity: 0.6; cursor: default; transform: none;
 	.payment-dialog-card { padding: var(--space-4); }
 	.payment-dialog-actions .btn { flex: 1; }
 }
+
+
+/* ============================= profile identity ============================= */
+.profile-identity {
+	display: flex;
+	align-items: center;
+	gap: var(--space-4);
+	padding: var(--space-4);
+	margin-bottom: var(--space-5);
+}
+.profile-identity-copy { min-width: 0; }
+.profile-display-name {
+	font: var(--text-title-2);
+	color: var(--text-primary);
+	text-transform: none;
+	letter-spacing: normal;
+	overflow-wrap: anywhere;
+}
+.profile-username {
+	margin-top: var(--space-1);
+	font: var(--text-headline);
+	color: var(--attention);
+	overflow-wrap: anywhere;
+}
+.profile-identity .text-footnote { margin-top: var(--space-2); }
+@media (max-width: 480px) {
+	.profile-identity { align-items: flex-start; }
+	.profile-identity .avatar.lg { width: 72px; height: 72px; }
+}
