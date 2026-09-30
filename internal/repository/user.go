@@ -102,6 +102,31 @@ func (r *UserRepository) HasActiveSellerSubscription(userID int64) (bool, error)
 	return active == 1, err
 }
 
+type SubscriptionPayment struct {
+	Reference string
+	Plan string
+	Status string
+	AmountKobo int64
+	CreatedAt string
+	CompletedAt sql.NullString
+}
+
+func (r *UserRepository) SubscriptionPaymentsForUser(userID int64) ([]SubscriptionPayment, error) {
+	rows, err := r.db.Query(`SELECT reference, plan, status,
+		CASE WHEN plan='yearly' THEN 1500000 ELSE 200000 END,
+		CAST(created_at AS TEXT), CAST(completed_at AS TEXT)
+		FROM subscription_payments WHERE user_id=? ORDER BY created_at DESC`, userID)
+	if err != nil { return nil, err }
+	defer rows.Close()
+	var payments []SubscriptionPayment
+	for rows.Next() {
+		var p SubscriptionPayment
+		if err := rows.Scan(&p.Reference, &p.Plan, &p.Status, &p.AmountKobo, &p.CreatedAt, &p.CompletedAt); err != nil { return nil, err }
+		payments = append(payments, p)
+	}
+	return payments, rows.Err()
+}
+
 func (r *UserRepository) CreateSubscriptionPayment(userID int64, reference, plan string) error {
 	_, err := r.db.Exec(`INSERT INTO subscription_payments (user_id, reference, plan, status) VALUES (?, ?, ?, 'pending')`, userID, reference, plan); return err
 }

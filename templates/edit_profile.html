@@ -72,6 +72,26 @@
 	</section>
 	{{end}}
 
+	{{if .SubscriptionPayments}}
+	<section class="surface" aria-label="Subscription payment history">
+		<p class="text-caption">Billing</p>
+		<h2 class="text-title-2">Payment history</h2>
+		<div class="stack">
+			{{range .SubscriptionPayments}}
+			<article class="plan-card">
+				<span>
+					<strong>{{if eq .Plan "yearly"}}Yearly seller plan{{else}}Monthly seller plan{{end}}</strong><br>
+					₦{{if eq .Plan "yearly"}}15,000{{else}}2,000{{end}} · {{if eq .Status "completed"}}Successful{{else}}{{.Status}}{{end}}<br>
+					<span class="text-footnote">{{if .CompletedAt.Valid}}Paid {{.CompletedAt.String}}{{else}}Started {{.CreatedAt}}{{end}}</span><br>
+					<span class="text-footnote">Reference: {{.Reference}}</span>
+				</span>
+			</article>
+			{{end}}
+		</div>
+		<p class="text-footnote">These records are your CRDLedger subscription receipts. Keep the Paystack reference when contacting support about a payment.</p>
+	</section>
+	{{end}}
+
 	<button type="button" class="btn btn-primary profile-edit-toggle" data-profile-edit-toggle aria-expanded="false" aria-controls="profile-edit-panel">Edit profile</button>
 
 	<section id="profile-edit-panel" class="profile-edit-panel surface" hidden>
