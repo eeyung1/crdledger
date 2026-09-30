@@ -13,12 +13,25 @@ import (
 
 type AdminHandler struct {
 	auth      *service.AuthService
+	users     *repository.UserRepository
 	checker   *AdminChecker
 	templates *template.Template
 }
 
-func NewAdminHandler(auth *service.AuthService, checker *AdminChecker, templates *template.Template) *AdminHandler {
-	return &AdminHandler{auth: auth, checker: checker, templates: templates}
+func NewAdminHandler(auth *service.AuthService, users *repository.UserRepository, checker *AdminChecker, templates *template.Template) *AdminHandler {
+	return &AdminHandler{auth: auth, users: users, checker: checker, templates: templates}
+}
+
+func (h *AdminHandler) SubscriptionsPage(w http.ResponseWriter, r *http.Request) {
+	if !h.isAdmin(r) { http.Error(w, "not authorized", http.StatusForbidden); return }
+	users, err := h.users.AdminSubscriptionRows(); if err != nil { http.Error(w,"failed to load subscriptions",500); return }
+	payments, err := h.users.AdminPaymentRows(100); if err != nil { http.Error(w,"failed to load payments",500); return }
+	active, sellers, pending := 0,0,0
+	for _, u := range users { if u.AccountType=="seller" { sellers++; if u.Status=="active" { active++ }; if u.Status=="pending" { pending++ } } }
+	h.templates.ExecuteTemplate(w,"admin_subscriptions.html",map[string]any{
+		"Users":users,"Payments":payments,"SellerCount":sellers,"ActiveCount":active,"PendingCount":pending,
+		"CSRFToken":middleware.CSRFTokenFromContext(r),"IsAdmin":true,
+	})
 }
 
 func (h *AdminHandler) isAdmin(r *http.Request) bool {
