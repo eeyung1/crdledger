@@ -125,10 +125,20 @@ func main() {
 	mux.HandleFunc("/transactions", csrf(sessions.RequireAuth(transactionsMenuHandler.Menu)))
 	mux.HandleFunc("/transactions/creditors", csrf(sessions.RequireAuth(transactionsListHandler.Creditors)))
 	mux.HandleFunc("/transactions/debtors", csrf(sessions.RequireAuth(transactionsListHandler.Debtors)))
-	mux.HandleFunc("/transactions/new", csrf(sessions.RequireAuth(transactionHandler.RecordPage)))
-	mux.HandleFunc("/api/sync/transactions", csrf(sessions.RequireAuth(syncHandler.CreateTransaction)))
+	sellerOnly := func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			userID, ok := middleware.UserIDFromContext(r)
+			if !ok { http.Redirect(w, r, "/login", http.StatusSeeOther); return }
+			active, err := userRepo.HasActiveSellerSubscription(userID)
+			if err != nil { http.Error(w, "failed to verify seller access", http.StatusInternalServerError); return }
+			if !active { http.Error(w, "Seller subscription required.", http.StatusForbidden); return }
+			next(w, r)
+		}
+	}
+	mux.HandleFunc("/transactions/new", csrf(sessions.RequireAuth(sellerOnly(transactionHandler.RecordPage))))
+	mux.HandleFunc("/api/sync/transactions", csrf(sessions.RequireAuth(sellerOnly(syncHandler.CreateTransaction))))
 	mux.HandleFunc("/orders/new", csrf(sessions.RequireAuth(orderHandler.NewOrderPage)))
-	mux.HandleFunc("/transactions/mark-paid", csrf(sessions.RequireAuth(transactionHandler.MarkPaid)))
+	mux.HandleFunc("/transactions/mark-paid", csrf(sessions.RequireAuth(sellerOnly(transactionHandler.MarkPaid))))
 	mux.HandleFunc("/transactions/confirm", csrf(sessions.RequireAuth(transactionHandler.Confirm)))
 	mux.HandleFunc("/transactions/reject", csrf(sessions.RequireAuth(transactionHandler.Reject)))
 	mux.HandleFunc("/profile/edit", csrf(sessions.RequireAuth(profileHandler.EditProfilePage)))
@@ -181,6 +191,9 @@ func createTables(db *sql.DB) error {
 		password_hash TEXT NOT NULL,
 		display_name TEXT NOT NULL,
 		photo_path TEXT,
+		account_type TEXT NOT NULL DEFAULT 'buyer',
+		subscription_status TEXT NOT NULL DEFAULT 'not_required',
+		subscription_ends_at DATETIME,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	);`
 
@@ -208,6 +221,16 @@ func createTables(db *sql.DB) error {
 	}
 	if _, err := db.Exec(transactionsTable); err != nil {
 		return err
+	}
+
+	// Account roles and seller subscription state. Existing accounts remain
+	// buyers by default; seller access is granted only after activation.
+	for _, migration := range []string{
+		`ALTER TABLE users ADD COLUMN account_type TEXT NOT NULL DEFAULT 'buyer'`,
+		`ALTER TABLE users ADD COLUMN subscription_status TEXT NOT NULL DEFAULT 'not_required'`,
+		`ALTER TABLE users ADD COLUMN subscription_ends_at DATETIME`,
+	} {
+		if _, err := db.Exec(migration); err != nil && !strings.Contains(err.Error(), "duplicate column") { return err }
 	}
 
 	// Defensive migration for databases created before receipts existed.

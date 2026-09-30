@@ -32,6 +32,11 @@
 			Display name
 			<input type="text" name="display_name" placeholder="What should people call you?" autocomplete="name" required>
 		</label>
+		<fieldset class="account-type-picker">
+			<legend>Account type</legend>
+			<label><input type="radio" name="account_type" value="buyer" required> Buyer <span class="text-footnote">Free · add orders and view your ledger</span></label>
+			<label><input type="radio" name="account_type" value="seller" required> Seller <span class="text-footnote">Requires activation · record credit transactions</span></label>
+		</fieldset>
 		<button type="submit" class="btn-primary">Create account</button>
 	</form>
 
