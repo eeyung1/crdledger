@@ -63,6 +63,7 @@ func (h *ProfileHandler) EditProfilePage(w http.ResponseWriter, r *http.Request)
 		"SubscriptionPayments": payments,
 		"NameError":   r.URL.Query().Get("name_error"),
 		"UpgradeError": r.URL.Query().Get("upgrade_error"),
+		"PaymentError": r.URL.Query().Get("payment_error"),
 		"CSRFToken":   middleware.CSRFTokenFromContext(r),
 		"IsAdmin":     h.admin.IsAdmin(r),
 	})
