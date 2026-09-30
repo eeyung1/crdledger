@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/static/css/style.css"><title>Subscriptions — crdledger admin</title></head>
+<body>{{template "sidebar" .}}
+<p class="text-caption">Admin</p><h1 class="page-title">Subscriptions & payments</h1>
+<section class="balance-summary two-col">
+ <div class="balance-card surface"><div class="label">Seller accounts</div><div class="amount-large">{{.SellerCount}}</div></div>
+ <div class="balance-card surface"><div class="label">Active subscriptions</div><div class="amount-large">{{.ActiveCount}}</div></div>
+ <div class="balance-card surface"><div class="label">Pending sellers</div><div class="amount-large">{{.PendingCount}}</div></div>
+</section>
+<section class="surface admin-table-card"><p class="text-caption">Accounts</p><h2>Subscription status</h2>
+<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>User</th><th>Type</th><th>Status</th><th>Plan</th><th>Expires</th></tr></thead><tbody>
+{{range .Users}}<tr><td><strong>@{{.Username}}</strong><br><span class="text-footnote">{{.Email}}</span></td><td>{{.AccountType}}</td><td>{{.Status}}</td><td>{{if .Plan}}{{.Plan}}{{else}}—{{end}}</td><td>{{if .EndsAt.Valid}}{{.EndsAt.String}}{{else}}—{{end}}</td></tr>{{end}}
+</tbody></table></div></section>
+<section class="surface admin-table-card"><p class="text-caption">Billing</p><h2>Recent payments</h2>
+<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>User</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th><th>Reference</th></tr></thead><tbody>
+{{range .Payments}}<tr><td>@{{.Username}}</td><td>{{.Plan}}</td><td>₦{{if eq .Plan "yearly"}}15,000{{else}}2,000{{end}}</td><td>{{.Status}}</td><td>{{if .CompletedAt.Valid}}{{.CompletedAt.String}}{{else}}{{.CreatedAt}}{{end}}</td><td><code>{{.Reference}}</code></td></tr>{{else}}<tr><td colspan="6">No subscription payments yet.</td></tr>{{end}}
+</tbody></table></div></section>
+{{template "sidebar_end" .}}</body></html>
