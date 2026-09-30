@@ -712,3 +712,51 @@ button:disabled, .btn:disabled { opacity: 0.6; cursor: default; transform: none;
 		flex-basis: 100%;
 	}
 }
+
+
+/* ============================= payment date dialog ============================= */
+.payment-dialog {
+	border: 0;
+	padding: 0;
+	background: transparent;
+	color: var(--text-primary);
+	width: min(420px, calc(100vw - 32px));
+	max-width: none;
+}
+.payment-dialog::backdrop {
+	background: rgba(0, 0, 0, 0.62);
+	backdrop-filter: blur(3px);
+}
+.payment-dialog-card {
+	display: grid;
+	gap: var(--space-4);
+	padding: var(--space-5);
+	background: var(--surface-elevated);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-floating);
+}
+.payment-dialog-card h2 { margin: var(--space-1) 0; }
+.payment-dialog-card .text-footnote { margin: 0; color: var(--text-secondary); }
+.payment-dialog-card label { font: var(--text-footnote); color: var(--text-secondary); }
+.payment-dialog-card input[type="date"] {
+	width: 100%;
+	min-height: 48px;
+	font: var(--text-body);
+	color: var(--text-primary);
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	padding: var(--space-3);
+	color-scheme: light dark;
+}
+.payment-dialog-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--space-2);
+}
+@media (max-width: 480px) {
+	.payment-dialog { width: calc(100vw - 24px); }
+	.payment-dialog-card { padding: var(--space-4); }
+	.payment-dialog-actions .btn { flex: 1; }
+}
